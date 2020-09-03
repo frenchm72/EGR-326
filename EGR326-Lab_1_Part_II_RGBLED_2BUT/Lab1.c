@@ -15,20 +15,22 @@ void main(void)
 
     initPins();
 
-    uint8_t a;
+    uint8_t a, b;
 
     while(1)
    {
-        a = butPres(a);
+        a = butPres();
+        b = butPres2();
+        delay_ms(5);
         switch(state)
         {
         case LED_OFF:                               //this if for the color black/off
             LEDPORT->OUT &= ~(REDLED|GREENLED|BLUELED); //turns leds off
             if(a==1)
                 state =LED_RED;
-            else if(a==2)
+            else if(b==1)
                 state =LED_BLUE;
-            else if(a==3)
+            else if((a==b)&((a+b)!=0))
                 state =LED_OFF;
             break;
         case LED_RED:
@@ -36,9 +38,9 @@ void main(void)
             LEDPORT->OUT |= (REDLED);
             if(a==1)
                 state =LED_GREEN;
-            else if(a==2)
+            else if(b==1)
                 state =LED_BLUE;
-            else if(a==3)
+            else if((a==b)&((a+b)!=0))
                 state =LED_OFF;
             break;
         case LED_GREEN:
@@ -46,9 +48,9 @@ void main(void)
             LEDPORT->OUT |= (GREENLED);                      //this turns LED GREEN
             if(a==1)
                 state =LED_BLUE;
-            else if(a==2)
+            else if(b==1)
                 state =LED_RED;
-            else if(a==3)
+            else if((a==b)&((a+b)!=0))
                 state =LED_OFF;
             break;
         case LED_BLUE:
@@ -56,15 +58,15 @@ void main(void)
             LEDPORT->OUT |= (BLUELED);                      //this turns LED BLUE
             if(a==1)
                 state =LED_RED;
-            else if(a==2)
+            else if(b==1)
                 state =LED_GREEN;
-            else if(a==3)
+            else if((a==b)&((a+b)!=0))
                 state =LED_OFF;
             break;
         default:
             state =LED_OFF;
             break;
         }
-    }
+   }
 }
 

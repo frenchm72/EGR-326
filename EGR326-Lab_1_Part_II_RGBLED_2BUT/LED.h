@@ -7,7 +7,7 @@
 #include <math.h>
 #include <string.h>
 
-#define DELAY 5                              //macro for the delay function, can be easily changed
+#define DELAY 0                             //macro for the delay function, can be easily changed
 #define BUTPORT P6
 #define BUTPIN BIT4
 #define BUTPIN2 BIT5
@@ -56,32 +56,27 @@ int delay_ms(int ms)//delay in milliseconds using systick
     return ms;
 }
 
-int butPres(uint8_t b)
+uint8_t butPres()
 {
-    if((!((BUTPORT->IN & BUTPIN)))|(!((BUTPORT->IN & BUTPIN2))))
-    {
-        delay_ms(DELAY);
-        while((!((BUTPORT->IN & BUTPIN)))|(!((BUTPORT->IN & BUTPIN2))))
-        {
-            if((!((BUTPORT->IN & BUTPIN)))&(!((BUTPORT->IN & BUTPIN2))))
-            {
-                b = 3;
-            }
-            else if((!((BUTPORT->IN & BUTPIN2))))
-            {
-                b = 2;
-            }
-            else
-            {
-                b = 1;
-            }
-        }
-    }
-    else
-    {
-        b = 0;
-    }
-    return b;
+   static uint16_t State = 0;
+
+   State=(State<<1)|(BUTPORT->IN & BUTPIN)>>1|0xf800;
+
+   if(State==0xfc00)
+       return 1;
+
+   return 0;
+}
+uint8_t butPres2()
+{
+   static uint16_t State2 = 0;
+
+   State2=(State2<<1)|(BUTPORT->IN & BUTPIN2)>>1|0xf800;
+
+   if(State2==0xfc00)
+       return 1;
+
+   return 0;
 }
 
 #endif
