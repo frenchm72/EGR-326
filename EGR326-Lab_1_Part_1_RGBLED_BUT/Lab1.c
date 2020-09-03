@@ -4,7 +4,7 @@
   Author(s):   Mathew J. Yerian-French
   Date:        09/04/2020
   Instructor:  Professor Brian Krug
-  Description:
+  Description: This program is made to interface with two buttons that will control a RGB LED.
   Note:
 ***************************************************************************************************************/
 #include "LED.h"
