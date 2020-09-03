@@ -19,7 +19,8 @@ void main(void)
 
     while(1)
    {
-        a = butPres(a);
+        a = butPres();
+        delay_ms(5);
         switch(state)
         {
         case LED_OFF:                               //this if for the color black/off

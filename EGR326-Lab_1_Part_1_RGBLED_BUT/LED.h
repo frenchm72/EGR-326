@@ -55,19 +55,16 @@ int delay_ms(int ms)//delay in milliseconds using systick
     return ms;
 }
 
-int butPres(uint8_t b)                              //This is our function to see if the button has been pressed
+uint8_t butPres()
 {
-    if(!((BUTPORT->IN & BUTPIN)))                          //This action executes if button is pressed
-    {
-        delay_ms(DELAY);                      //This is our debouncer, its immediately after  the button being pressed
-        while(!((BUTPORT->IN & BUTPIN)));
-        b = 1;                                      //This is to return a value after the button is released
-    }
-    else                                            //This is if the button was not pressed
-    {
-        b = 0;                                      //makes b 0 because the button wasn't pressed
-    }
-    return b;                                       //Returns the value of b 1/0 pressed/not
+   static uint16_t State = 0;
+
+   State=(State<<1)|(BUTPORT->IN & BUTPIN)>>1|0xf800;
+
+   if(State==0xfc00)
+       return 1;
+
+   return 0;
 }
 
 #endif
