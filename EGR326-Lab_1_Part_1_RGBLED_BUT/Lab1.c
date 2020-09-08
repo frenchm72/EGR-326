@@ -26,7 +26,7 @@ void main(void)
         case LED_OFF:                               //this if for the color black/off
             LEDPORT->OUT &= ~(REDLED|GREENLED|BLUELED); //turns leds off
             if(a==1)
-                state =LED_RED;
+                state =LED_GREEN;
             break;
         case LED_RED:
             LEDPORT->OUT &= ~(GREENLED|BLUELED);

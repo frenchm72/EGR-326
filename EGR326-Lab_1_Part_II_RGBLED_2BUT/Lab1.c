@@ -17,51 +17,52 @@ void main(void)
 
     uint8_t a, b;
 
+    int count = 0;
+
     while(1)
    {
         a = butPres();
         b = butPres2();
-        delay_ms(5);
         switch(state)
         {
         case LED_OFF:                               //this if for the color black/off
             LEDPORT->OUT &= ~(REDLED|GREENLED|BLUELED); //turns leds off
-            if(a==1)
-                state =LED_RED;
+            if((a+b)==2)
+                state =LED_OFF;
+            else if(a==1)
+                state =LED_GREEN;
             else if(b==1)
                 state =LED_BLUE;
-            else if((a==b)&((a+b)!=0))
-                state =LED_OFF;
             break;
         case LED_RED:
             LEDPORT->OUT &= ~(GREENLED|BLUELED);
             LEDPORT->OUT |= (REDLED);
-            if(a==1)
+            if((a+b)==2)
+                state =LED_OFF;
+            else if(a==1)
                 state =LED_GREEN;
             else if(b==1)
                 state =LED_BLUE;
-            else if((a==b)&((a+b)!=0))
-                state =LED_OFF;
             break;
         case LED_GREEN:
             LEDPORT->OUT &= ~(REDLED|BLUELED);
             LEDPORT->OUT |= (GREENLED);                      //this turns LED GREEN
-            if(a==1)
+            if((a+b)==2)
+                state =LED_OFF;
+            else if(a==1)
                 state =LED_BLUE;
             else if(b==1)
                 state =LED_RED;
-            else if((a==b)&((a+b)!=0))
-                state =LED_OFF;
             break;
         case LED_BLUE:
             LEDPORT->OUT &= ~(REDLED|GREENLED);
             LEDPORT->OUT |= (BLUELED);                      //this turns LED BLUE
-            if(a==1)
+            if((a+b)==2)
+                state =LED_OFF;
+            else if(a==1)
                 state =LED_RED;
             else if(b==1)
                 state =LED_GREEN;
-            else if((a==b)&((a+b)!=0))
-                state =LED_OFF;
             break;
         default:
             state =LED_OFF;
