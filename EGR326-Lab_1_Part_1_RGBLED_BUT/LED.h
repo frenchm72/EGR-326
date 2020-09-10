@@ -7,9 +7,11 @@
 #include <math.h>
 #include <string.h>
 
-#define DELAY 5                              //macro for the delay function, can be easily changed
+#define DELAY 0                            //macros, so they can be easily changed
+#define CHECK 10000
 #define BUTPORT P6
 #define BUTPIN BIT4
+#define BUTPIN2 BIT5
 #define LEDPORT P4
 #define REDLED BIT4
 #define GREENLED BIT2
@@ -31,11 +33,11 @@ void initPins(void)
     LEDPORT->DIR |= (REDLED|GREENLED|BLUELED);
     LEDPORT->OUT |= (REDLED|GREENLED|BLUELED);
 
-    BUTPORT->SEL0 &= ~(BUTPIN);                            //setting up button
-    BUTPORT->SEL1 &= ~(BUTPIN);
-    BUTPORT->DIR &= ~(BUTPIN);
-    BUTPORT->REN |= BUTPIN;
-    BUTPORT->OUT |= BUTPIN;
+    BUTPORT->SEL0 &= ~(BUTPIN|BUTPIN2);                            //setting up buttons
+    BUTPORT->SEL1 &= ~(BUTPIN|BUTPIN2);
+    BUTPORT->DIR &= ~(BUTPIN|BUTPIN2);
+    BUTPORT->REN |= (BUTPIN|BUTPIN2);
+    BUTPORT->OUT |= (BUTPIN|BUTPIN2);
 }
 
 void StsTick_Init(void)//sys tick initialization
@@ -55,13 +57,24 @@ int delay_ms(int ms)//delay in milliseconds using systick
     return ms;
 }
 
-uint8_t butPres()
+uint8_t butPres() //Checks button 1
 {
-   static uint16_t State = 0;
+   static uint16_t State = 0; // static will be retained
 
-   State=(State<<1)|(BUTPORT->IN & BUTPIN)>>1|0xf800;
+   State=(State<<1)|(BUTPORT->IN & BUTPIN)>>4|0xf800;
 
    if(State==0xfc00)
+       return 1;
+
+   return 0;
+}
+uint8_t butPres2() //checks button 2
+{
+   static uint16_t State2 = 0;
+
+   State2=(State2<<1)|(BUTPORT->IN & BUTPIN2)>>5|0xf800;
+
+   if(State2==0xfc00)
        return 1;
 
    return 0;

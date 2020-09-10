@@ -5,7 +5,7 @@
   Date:        09/04/2020
   Instructor:  Professor Brian Krug
   Description: This program is made to interface with two buttons that will control a RGB LED.
-  Note:
+  Note:        LED.h is the same for Part I and Part II
 ***************************************************************************************************************/
 #include "LED.h"
 

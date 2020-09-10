@@ -4,8 +4,8 @@
   Author(s):   Mathew J. Yerian-French
   Date:        09/04/2020
   Instructor:  Professor Brian Krug
-  Description: This program is made to interface with two buttons that will control a RGB LED.
-  Note:
+  Description: This program is made to interface with one button that will control a RGB LED described in lab 1.
+  Note:        LED.h is the same for Part I and Part II
 ***************************************************************************************************************/
 #include "LED.h"
 
