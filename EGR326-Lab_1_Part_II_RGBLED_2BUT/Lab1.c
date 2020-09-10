@@ -23,7 +23,7 @@ void main(void)
    {
         a = butPres();
         b = butPres2();
-        if(a)
+        if(a) //if button was pressed it checks if the other has been pressed
         {
             while(1)
             {
@@ -36,7 +36,7 @@ void main(void)
                 }
             }
         }
-        else if(b)
+        else if(b)//if button was pressed it checks if the other has been pressed
         {
             while(1)
             {
@@ -61,7 +61,7 @@ void main(void)
                 state =LED_BLUE;
             break;
         case LED_RED:
-            LEDPORT->OUT &= ~(GREENLED|BLUELED);
+            LEDPORT->OUT &= ~(GREENLED|BLUELED); //to turn LED RED
             LEDPORT->OUT |= (REDLED);
             if((a+b)==2)
                 state =LED_OFF;

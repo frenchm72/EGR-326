@@ -7,7 +7,7 @@
 #include <math.h>
 #include <string.h>
 
-#define DELAY 0                            //macro for the delay function, can be easily changed
+#define DELAY 0                            //macros, so they can be easily changed
 #define CHECK 10000
 #define BUTPORT P6
 #define BUTPIN BIT4
@@ -57,7 +57,7 @@ int delay_ms(int ms)//delay in milliseconds using systick
     return ms;
 }
 
-uint8_t butPres()
+uint8_t butPres() //Checks button 1
 {
    static uint16_t State = 0; // static will be retained
 
@@ -68,7 +68,7 @@ uint8_t butPres()
 
    return 0;
 }
-uint8_t butPres2()
+uint8_t butPres2() //checks button 2
 {
    static uint16_t State2 = 0;
 
