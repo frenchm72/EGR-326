@@ -8,7 +8,7 @@
 #include <string.h>
 
 #define DELAY 0                            //macro for the delay function, can be easily changed
-#define LOOP 3000000
+#define CHECK 10000
 #define BUTPORT P6
 #define BUTPIN BIT4
 #define BUTPIN2 BIT5

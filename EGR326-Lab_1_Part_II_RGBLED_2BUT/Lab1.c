@@ -23,6 +23,32 @@ void main(void)
    {
         a = butPres();
         b = butPres2();
+        if(a)
+        {
+            while(1)
+            {
+                b = butPres2();
+                count++;
+                if(count == CHECK | b)
+                {
+                    count = 0;
+                    break;
+                }
+            }
+        }
+        else if(b)
+        {
+            while(1)
+            {
+                a = butPres();
+                count++;
+                if(count == CHECK | a)
+                {
+                    count = 0;
+                    break;
+                }
+            }
+        }
         switch(state)
         {
         case LED_OFF:                               //this if for the color black/off
