@@ -1,14 +1,15 @@
 /**************************************************************************************************************
   Title:        EGR 326 Lab 2
-  Filename:     Part_II.c
+  Filename:     PARTIII.h
   Author(s):    Mathew J. Yerian-French
   Date:         09/11/2020
   Instructor:   Professor Brian Krug
-  Description:  This program is made to interface with a button that will control a RGB LED. The button will
-                decide how quickly the LED is Changing/toggling.
+  Description:  This program is made to interface with two buttons that will control a RGB LED. The first
+                button will decide which LED is toggling. Then holding the second button will toggle the LED
+                selected on and off
   Note:
 ***************************************************************************************************************/
-#include "PARTII.h"
+#include "PARTIII.h"
 
 void main(void)
 {
@@ -20,7 +21,8 @@ void main(void)
 
     while(1)
    {
-        if(BUT1)
-        RunLED();
+       RunLED();
+       if(BUTPORT->IN & BUTPIN2)
+           BUT2 = 0;
     }
 }
