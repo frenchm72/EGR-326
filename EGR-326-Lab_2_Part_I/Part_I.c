@@ -15,8 +15,6 @@ void main(void)
     WDT_A->CTL = WDT_A_CTL_PW | WDT_A_CTL_HOLD;     // stop watchdog timer
 
     initMSP();
-    StsTick_Init();
-    int del;
     NVIC->ISER[1] = 1 << ((PORT1_IRQn) & 31);
     __enable_interrupt();
 
@@ -26,9 +24,8 @@ void main(void)
             FreqChange();
         if(LED)
         {
-            del = ((((1.0/Freq))*1000.0)/2.0);
-            delay_ms(del);
             LEDPORT->OUT ^= (BLUELED);
+            delay_ms(((((1.0/Freq))*1000.0)/2.0));
         }
         else
             LEDPORT->OUT &= ~(BLUELED);

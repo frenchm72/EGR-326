@@ -1,15 +1,15 @@
 /**************************************************************************************************************
   Title:        EGR 326 Lab 2
-  Filename:     PARTI.h
+  Filename:     PARTII.h
   Author(s):    Mathew J. Yerian-French
   Date:         09/11/2020
   Instructor:   Professor Brian Krug
-  Description:  This program is made to interface with two buttons that will control a Blue LED. The Two
-                buttons will decide how quickly the LED is toggling.
+  Description:  This program is made to interface with a button that will control a RGB LED. The button will
+                decide how quickly the LED is Changing/toggling.
   Note:
 ***************************************************************************************************************/
-#ifndef __PARTI_H__
-#define __PARTI_H__
+#ifndef __PARTII_H__
+#define __PARTII_H__
 
 #include "msp.h"
 #include <stdio.h>
