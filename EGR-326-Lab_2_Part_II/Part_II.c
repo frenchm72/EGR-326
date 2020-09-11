@@ -20,14 +20,7 @@ void main(void)
 
     while(1)
    {
-        if(BUT1 | BUT2)
-            FreqChange();
-        if(LED)
-        {
-            LEDPORT->OUT ^= (BLUELED);
-            delay_ms(((((1.0/Freq))*1000.0)/2.0));
-        }
-        else
-            LEDPORT->OUT &= ~(BLUELED);
-   }
+        if(BUT1)
+        RunLED();
+    }
 }

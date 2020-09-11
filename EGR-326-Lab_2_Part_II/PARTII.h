@@ -17,38 +17,49 @@
 #include <math.h>
 #include <string.h>
 
-volatile float Freq;
 volatile uint8_t LED;
 volatile uint8_t BUT1;
-volatile uint8_t BUT2;
-#define MINFREQ 0.5
-#define MAXFREQ 250
+volatile uint8_t Direction;
+volatile uint8_t timeout;
 #define BUTPORT P1
 #define BUTPIN BIT6
-#define BUTPIN2 BIT7
 #define LEDPORT P4
+#define REDLED BIT4
+#define GREENLED BIT2
 #define BLUELED BIT0
+
+enum  states                                        //this is the set up for the states used in the program
+{
+    LED_OFF,                                        //State for OFF
+    LED_RED,                                        //State for RED
+    LED_GREEN,                                      //State for GREEN
+    LED_BLUE                                        //State for BLUE
+
+} state;
 
 void initMSP(void)
 {
-    LEDPORT->SEL0 &= ~(BLUELED);    //setting up LEDs
-    LEDPORT->SEL1 &= ~(BLUELED);
-    LEDPORT->DIR |= (BLUELED);
-    LEDPORT->OUT |= (BLUELED);
+    LEDPORT->SEL0 &= ~(REDLED|GREENLED|BLUELED);                  //setting up LEDs
+    LEDPORT->SEL1 &= ~(REDLED|GREENLED|BLUELED);
+    LEDPORT->DIR |= (REDLED|GREENLED|BLUELED);
+    LEDPORT->OUT |= (REDLED|GREENLED|BLUELED);
+    LEDPORT->OUT &= ~(REDLED|GREENLED|BLUELED); //turns leds off
 
-    BUTPORT->SEL0 &= ~(BUTPIN|BUTPIN2); //setting up button as interrupt
-    BUTPORT->SEL1 &= ~(BUTPIN|BUTPIN2);
-    BUTPORT->DIR &= ~(BUTPIN|BUTPIN2);
-    BUTPORT->REN |= (BUTPIN|BUTPIN2);   //enable resistor
-    BUTPORT->OUT |= (BUTPIN|BUTPIN2);   //enable pull up
-    BUTPORT->IES |= (BUTPIN|BUTPIN2);   //set pin as interrupt
-    BUTPORT->IE |= (BUTPIN|BUTPIN2);    //enable interrupt for Px.x
-    BUTPORT->IFG &= ~(BUTPIN|BUTPIN2);  //clears interrupt flag
+    BUTPORT->SEL0 &= ~(BUTPIN); //setting up button as interrupt
+    BUTPORT->SEL1 &= ~(BUTPIN);
+    BUTPORT->DIR &= ~(BUTPIN);
+    BUTPORT->REN |= (BUTPIN);   //enable resistor
+    BUTPORT->OUT |= (BUTPIN);   //enable pull up
+    BUTPORT->IES |= (BUTPIN);   //set pin as interrupt
+    BUTPORT->IE |= (BUTPIN);    //enable interrupt for Px.x
+    BUTPORT->IFG &= ~(BUTPIN);  //clears interrupt flag
 
     SysTick -> CTRL = 0;//disable systick during step
-    SysTick -> LOAD = 0x00FFFFFF;//max reload value
+    SysTick -> LOAD = 3000000;//1 sec reload value
     SysTick -> VAL = 0;//clears it
-    SysTick -> CTRL = 0x00000005;//enables systick 3MHz no interrupts
+    SysTick -> CTRL = 0x00000007;//enables systick 3MHz no interrupts
+
+    state = LED_OFF;//initial state
 }
 
 void delay_ms(int ms)//delay in milliseconds using systick
@@ -60,57 +71,95 @@ void delay_ms(int ms)//delay in milliseconds using systick
 
 void PORT1_IRQHandler(void) // port 1 interrupt handler
 {
-    if((BUTPORT->IFG & BUTPIN))
-        BUT1 = 1;
-    if((BUTPORT->IFG & BUTPIN2))
-        BUT2 = 1;
-    BUTPORT->IFG &= ~(BUTPIN|BUTPIN2);
+    if((BUTPORT->IFG & BUTPIN) && (!(BUTPORT->IN & BUTPIN)))
+    {
+       BUT1 = !BUT1;
+       Direction = !Direction;
+    }
+    BUTPORT->IFG &= ~(BUTPIN);
 }
 
-void FreqChange(void)
+void SysTick_Handler(void)
 {
-if((BUT1) && (!LED))
-    {
-        Freq = 0.5;
-        LED = 1;
-        BUT1 = 0;
-    }
-    else if ((BUT1) && (LED))
-    {
-        if(Freq >= MAXFREQ)
-        {
-            Freq = MAXFREQ;
-            LED = 1;
-            BUT1 = 0;
-        }
-        else
-        {
-            Freq = Freq * 2;
-            LED = 1;
-            BUT1 = 0;
-        }
-    }
-
-    if((BUT2) && (!LED))
-    {
-        Freq = MINFREQ;
-        LED = 0;
-        BUT2 = 0;
-    }
-    else if ((BUT2) && (LED))
-    {
-        if(Freq <= MINFREQ)
-        {
-            Freq = MINFREQ;
-            LED = 0;
-            BUT2 = 0;
-        }
-        else
-        {
-            Freq = Freq / 2;
-            LED = 1;
-            BUT2 = 0;
-        }
-    }
+    timeout = 1;
 }
+
+void RunLED(void)
+{
+    if(!(BUTPORT->IN & BUTPIN))
+    {
+        switch(state)
+                {
+                case LED_OFF:                               //this if for the color black/off
+                    LEDPORT->OUT &= ~(REDLED|GREENLED|BLUELED); //turns leds off
+                    if(timeout && (Direction == 0))
+                    {
+                        state =LED_RED;
+                        timeout = 0;
+                    }
+                    else if(timeout && (Direction == 1))
+                    {
+                        state =LED_BLUE;
+                        timeout = 0;
+                    }
+                    else
+                        state =LED_OFF;
+                    break;
+                case LED_RED:
+                    LEDPORT->OUT &= ~(GREENLED|BLUELED); //to turn LED RED
+                    LEDPORT->OUT |= (REDLED);
+                    if(timeout && (Direction == 0))
+                    {
+                        state =LED_GREEN;
+                        timeout = 0;
+                    }
+                    else if(timeout && (Direction == 1))
+                    {
+                        state =LED_BLUE;
+                        timeout = 0;
+                    }
+                    else
+                        state =LED_RED;
+                    break;
+                case LED_GREEN:
+                    LEDPORT->OUT &= ~(REDLED|BLUELED);
+                    LEDPORT->OUT |= (GREENLED);                      //this turns LED GREEN
+                    if(timeout && (Direction == 0))
+                    {
+                        state =LED_BLUE;
+                        timeout = 0;
+                    }
+                    else if(timeout && (Direction == 1))
+                    {
+                        state =LED_RED;
+                        timeout = 0;
+                    }
+                    else
+                        state =LED_GREEN;
+                    break;
+                case LED_BLUE:
+                    LEDPORT->OUT &= ~(REDLED|GREENLED);
+                    LEDPORT->OUT |= (BLUELED);                      //this turns LED BLUE
+                    if(timeout && (Direction == 0))
+                    {
+                        state =LED_RED;
+                        timeout = 0;
+                    }
+                    else if(timeout && (Direction == 1))
+                    {
+                        state =LED_GREEN;
+                        timeout = 0;
+                    }
+                    else
+                        state =LED_BLUE;
+                    break;
+                default:
+                    state = LED_OFF;
+                    break;
+                }
+    }
+    else
+        BUT1 = 0;
+}
+
 #endif
