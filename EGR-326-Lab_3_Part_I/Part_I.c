@@ -23,11 +23,11 @@ void main(void)
 
     while(1)
    {
-        TRIGPORT->OUT |= (TRIGPIN);
-        delay_us(10);
         TRIGPORT->OUT &= ~(TRIGPIN);
+        delay_us(2);
+        TRIGPORT->OUT |= (TRIGPIN);
 
-        delay_ms(500);
+        delay_ms(2000);
         printf("Inches:%f\tCentimeters:%f\n", distIN, distCM);
     }
 }

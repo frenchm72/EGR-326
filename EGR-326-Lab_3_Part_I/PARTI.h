@@ -20,10 +20,10 @@ float distIN = 0.0, distCM = 0.0;//global variables
 float rise, fall, pulseWidth;
 unsigned int RiseFlag = 0;
 
-#define TRIGPORT P4 //macros
-#define TRIGPIN BIT0
+#define TRIGPORT P5 //macros
+#define TRIGPIN BIT6 //timer A2.1
 #define ECHOPORT P2
-#define ECHOPIN BIT5
+#define ECHOPIN BIT5 //timer A0.2
 
 void initMSP(void)
 {
@@ -57,14 +57,14 @@ void delay_ms(int ms)//delay in milliseconds using systick
 {
     SysTick->LOAD =(3333*ms)-1;
     SysTick->VAL = 0;
-    while(!(SysTick->CTRL & BIT(16))==0);
+    while((SysTick->CTRL & BIT(16))==0);
 }
 
 void delay_us(int us)//delay in milliseconds using systick
 {
     SysTick->LOAD = (3*us)-1;
     SysTick->VAL = 0;
-    while(!(SysTick->CTRL & BIT(16))==0);
+    while((SysTick->CTRL & BIT(16))==0);
 }
 
 void TA0_N_IRQHandler(void)
