@@ -37,20 +37,36 @@ void initMSP(void)
     ECHOPORT->SEL1 &= ~(ECHOPIN);//TA0.CCI2A input capture pin, second function
     ECHOPORT->DIR &= ~(ECHOPIN);
 
-    TIMER_A0->CTL =         TIMER_A_CTL_TASSEL_2 | // Use SMCLK as clock
-                            TIMER_A_CTL_MC__UP |// Start timer in UP mode
-                            TIMER_A_CTL_CLR;// clear TA0R
+//    TIMER_A0->CTL |=        TIMER_A_CTL_TASSEL_2          | // Use SMCLK as clock
+//                            TIMER_A_CTL_MC__CONTINUOUS    |// Start timer in Continuous mode
+//                            TIMER_A_CTL_CLR;               // clear TA0R
+//
+//    //TIMER_A0->CCR[0] |= 0xFFFF;
+//
+//    TIMER_A0->CCTL[2] =     TIMER_A_CCTLN_CM_3    | // Capture rising and falling
+//                            TIMER_A_CCTLN_CCIS_0  |// Use CCI2A=
+//                            TIMER_A_CCTLN_CCIE    | // Enable capture interrupt
+//                            TIMER_A_CCTLN_CAP     | // Enable capture
+//                            TIMER_A_CCTLN_SCS;        // Synchronous capture
 
-    TIMER_A0->CCTL[2] =     TIMER_A_CCTLN_CM_3 | // Capture rising and falling
-                            TIMER_A_CCTLN_CCIS_0 |// Use CCI2A=
-                            TIMER_A_CCTLN_CCIE| // Enable capture interrupt
-                            TIMER_A_CCTLN_CAP| // Enable capture
-                            TIMER_A_CCTLN_SCS;// Synchronous capture
+    TIMER_A0->CTL |=TIMER_A_CTL_TASSEL_2    | // Use SMCLK as clock source,
+                    TIMER_A_CTL_MC_2        | // Start timer in UP mode
+                    TIMER_A_CTL_CLR;             // clear TA0R
+
+    TIMER_A0->CCTL[1] =TIMER_A_CCTLN_CM_3    | // Capture rising and falling edge,
+                       TIMER_A_CCTLN_CCIS_0  | // Use CCI2A
+                       TIMER_A_CCTLN_CCIE    | // Enable capture interrupt
+                       TIMER_A_CCTLN_CAP     | // Enable capture mode,
+                       TIMER_A_CCTLN_SCS;      // Synchronous capture
 
     SysTick -> CTRL = 0;//disable systick during step
     SysTick -> LOAD = 0x00FFFFFF;//max reload value
     SysTick -> VAL = 0;//clears it
     SysTick -> CTRL = 0x00000005;//enables systick 3MHz no interrupts
+
+
+    NVIC->ISER[0] = 1 << ((TA0_N_IRQn) & 31); // Enable interrupt in NVIC vector
+    __enable_irq ( );//enable global interrupt
 }
 
 void delay_ms(int ms)//delay in milliseconds using systick
@@ -69,23 +85,30 @@ void delay_us(int us)//delay in milliseconds using systick
 
 void TA0_N_IRQHandler(void)
 {
-    rise = TIMER_A0->CCR[2];
-
-    if(RiseFlag)
-    {
-        pulseWidth = fall - rise;
-        distCM = pulseWidth / 58.0; //to find distance knowing speed of sound is 340m/s
-        distIN = pulseWidth / 148.0;//find distance in inches
-        RiseFlag = ~RiseFlag;
-    }
-
+    rise = TIMER_A0->CCR[1]; // Get current count
+    if (P2IN&BIT4)  //  record timer on a falling edge
+        TIMER_A0->CTL |=TIMER_A_CTL_CLR;    // start timer on a rising edge
     else
-    {
-        RiseFlag = ~RiseFlag;
-    }
+        pulseWidth = rise; // record time on falling edge
 
-    fall = rise;
-    TIMER_A0->CCTL[2] &= ~(TIMER_A_CCTLN_CCIFG); //clears flag
+    TIMER_A0->CCTL[1] &= ~(TIMER_A_CCTLN_CCIFG);    // Clear the interrupt flag
+//    rise = TIMER_A0->CCR[2];
+//
+//    if(RiseFlag)
+//    {
+//        pulseWidth = fall - rise; // I know pulse needs to be adjusted to make it in us
+//        distCM = pulseWidth / 58.0; //to find distance knowing speed of sound is 340m/s
+//        distIN = pulseWidth / 148.0;//find distance in inches
+//        RiseFlag = ~RiseFlag;
+//    }
+//
+//    else
+//    {
+//        RiseFlag = ~RiseFlag;
+//    }
+//
+//    fall = rise;
+//    TIMER_A0->CCTL[2] &= ~(TIMER_A_CCTLN_CCIFG); //clears flag
 }
 
 #endif

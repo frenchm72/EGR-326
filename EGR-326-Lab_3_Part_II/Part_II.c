@@ -11,7 +11,7 @@ WIRING FOR MSP432
 Sonar Sensor: GND - GND | ECHO_VoltDiv - P6.4 | TRIG_MosFet - P4.0 | VCC - 5V |
 Blue LED: Anode - 5V | Cathode - Resistor - MosFet - GND | P2.4 - MosFet|
 ***********************************************************************************************************/
-#include "PARTI.h"
+#include "PARTII.h"
 
 void main(void)
 {

@@ -18,9 +18,6 @@ void main(void)
 
     initMSP();
 
-    NVIC->ISER[0] = 1 << ((TA0_0_IRQn) & 31); // Enable interrupt in NVIC vector
-    __enable_irq ( );//enable global interrupt
-
     while(1)
    {
         TRIGPORT->OUT &= ~(TRIGPIN);
@@ -28,6 +25,6 @@ void main(void)
         TRIGPORT->OUT |= (TRIGPIN);
 
         delay_ms(2000);
-        printf("Inches:%f\tCentimeters:%f\n", distIN, distCM);
+        printf("\nInches:%f\t\tCentimeters:%f", distIN, distCM);
     }
 }
