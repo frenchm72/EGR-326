@@ -8,7 +8,7 @@
   Note:
 ************************************************************************************************************
 WIRING FOR MSP432
-Sonar Sensor: GND - GND | ECHO_VoltDiv - P2.5 | TRIG_MosFet - P4.0 | VCC = 5V |
+Sonar Sensor: GND - GND | ECHO_VoltDiv - P2.4 | TRIG_MosFet - P5.6 | VCC = 5V |
 ***********************************************************************************************************/
 #include "PARTI.h"
 
@@ -21,10 +21,12 @@ void main(void)
     while(1)
    {
         TRIGPORT->OUT &= ~(TRIGPIN);
-        delay_us(2);
+        delay_us(10);
         TRIGPORT->OUT |= (TRIGPIN);
 
         delay_ms(2000);
-        printf("\nInches:%f\t\tCentimeters:%f", distIN, distCM);
+        distCM = (pulseWidth/3.0) / 58.0; //to find distance knowing speed of sound is 340m/s
+        distIN = (pulseWidth/3.0) / 148.0;//find distance in inches
+        printf("\nInches:%g\t\tCentimeters:%g", distIN, distCM);
     }
 }
