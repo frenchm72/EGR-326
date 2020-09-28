@@ -29,13 +29,12 @@ int keyPressed;
 void KeyInit(); //my function prototypes for the key pad
 uint16_t readKey(void);
 uint8_t readRow(void);
-char numTOstring(void);
-void resetKey(void);
-void SysTickInit(void);
-void delay_ms(int ms);//delay in milliseconds using systick
-void delay_us(int us);//delay in milliseconds using systick
 void interON(void);//turns on col
 void interOFF(void);//turns off col
 char* decodeKey(int val);//decodes press
+
+void SysTickInit(void);
+void delay_ms(int ms);//delay in milliseconds using systick
+void delay_us(int us);//delay in milliseconds using systick
 
 #endif
