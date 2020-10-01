@@ -11,6 +11,4 @@ int CWcount, CCWcount, SWflag;
 #define SWPORT P6
 #define SWPIN BIT1
 
-void rotorInit(void);
-
 #endif

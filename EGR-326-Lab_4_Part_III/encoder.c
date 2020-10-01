@@ -1,5 +1,6 @@
 #include "msp.h"
 #include "encoder.h"
+#include "keypad.h"
 #include <string.h>
 #include <stdio.h>
 #include <stdlib.h>
