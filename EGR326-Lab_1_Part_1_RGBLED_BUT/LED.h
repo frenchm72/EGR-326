@@ -9,13 +9,13 @@
 
 #define DELAY 0                            //macros, so they can be easily changed
 #define CHECK 10000
-#define BUTPORT P6
-#define BUTPIN BIT4
-#define BUTPIN2 BIT5
-#define LEDPORT P4
-#define REDLED BIT4
-#define GREENLED BIT2
-#define BLUELED BIT0
+#define BUTPORT P1
+#define BUTPIN BIT1
+#define BUTPIN2 BIT4
+#define LEDPORT P2
+#define REDLED BIT0
+#define GREENLED BIT1
+#define BLUELED BIT2
 
 enum  states                                        //this is the set up for the states used in the program
 {

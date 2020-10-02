@@ -65,6 +65,7 @@ void main(void)
                 keys = 0;
                 keys = 10 * atoi(decodeKey(key));//decoded key
                 key = 0;//clears the key press
+
                 breakFlag = 1;
             }
             else if(key && (breakFlag == 1))//if a key was pressed
@@ -101,7 +102,7 @@ void main(void)
 
 void SysTickInit(void)
 {
-SysTick -> CTRL = 0;//disable systick during step
+SysTick -> CTRL = 0;//disable systick during setup
 SysTick -> LOAD = 0x00FFFFFF;//max reload value
 SysTick -> VAL = 0;//clears it
 SysTick -> CTRL = 0x00000005;//enables systick 3MHz no interrupts
