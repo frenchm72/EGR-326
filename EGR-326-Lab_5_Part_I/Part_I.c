@@ -196,7 +196,7 @@ switch(state)
                     if((setRTC.dayT == 0) && (atoi(decodeKey(key)) == 0))
                         printf("%s is not valid."
                                 "\nPlease Try Again\n->", decodeKey(key));
-                    else if((setRTC.dayT == 3) && (atoi(decodeKey(key)) > 1))
+                    else if((setRTC.dayT == 3) && (atoi(decodeKey(key)) > 2))
                         printf("%s is not valid."
                                 "\nPlease Try Again\n->", decodeKey(key));
                     else if( !(strcmp(decodeKey(key),"X")) ||
