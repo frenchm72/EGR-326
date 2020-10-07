@@ -21,12 +21,12 @@ RTC: SCL - PX.X | SDA - PX.X | VCC - 3.3V | GND - GND |
 
 struct time
 {
-    int monthT,monthO,
-        dayT, dayO,
-        yearC, yearH, yearD, yearO,
-        hourT, hourO,
-        minT,minO,
-        secT,secO;
+int monthT,monthO,
+    dayT, dayO,
+    yearC, yearH, yearD, yearO,
+    hourT, hourO,
+    minT,minO,
+    secT,secO;
 };
 
 enum states
@@ -39,8 +39,8 @@ enum states
     getSecT,getSecO
 } state;
 
-struct time setRTC;
-struct time readRTC;
+struct time setRTC;//time to set to the RTC
+struct time readRTC;//time read from the RTC
 
 void getSetDateTime(void);
 
@@ -54,7 +54,6 @@ void main(void)
     SysTickInit();
     interON();//turns col on
 
-    NVIC->ISER[1] = 1 << ((PORT5_IRQn) & 31);
     NVIC->ISER[1] = 1 << ((PORT2_IRQn) & 31);
     __enable_interrupt();
 

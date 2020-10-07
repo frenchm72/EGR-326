@@ -1,5 +1,4 @@
 #include "msp.h"
-#include "rtc.h"
 #include "keypad.h"
 #include <string.h>
 #include <stdio.h>
@@ -101,19 +100,13 @@ uint8_t readRow() //reads rows
 
 void PORT2_IRQHandler(void) // port 2 interrupt handler
 {
-    if((R0_BANK->IFG & R0_PORT) || (R1_BANK->IFG & R1_PORT) || (R2_BANK->IFG & R2_PORT))//row 0-2
+    if((R0_BANK->IFG & R0_PORT) || (R1_BANK->IFG & R1_PORT) || (R2_BANK->IFG & R2_PORT) || (R3_BANK->IFG & R3_PORT))//row 0-2
             keyPressed = 1;
     R0_BANK->IFG &= ~(R0_PORT);//clears flags
     R1_BANK->IFG &= ~(R1_PORT);
     R2_BANK->IFG &= ~(R2_PORT);
-}
-void PORT5_IRQHandler(void) // port 5 interrupt handler this needs adjested for the correct handler
-{
-    if((R3_BANK->IFG & R3_PORT))//row 3
-            keyPressed = 1;
     R3_BANK->IFG &= ~(R3_PORT);//clears flag
 }
-
 void interON(void)
 {
     COL0_ON;//turns on the col so the handler can check

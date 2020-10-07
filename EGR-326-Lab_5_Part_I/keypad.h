@@ -9,15 +9,15 @@ int keyPressed;
 #define R1_PORT BIT6
 #define R2_BANK P2
 #define R2_PORT BIT4
-#define R3_BANK P5
-#define R3_PORT BIT6
+#define R3_BANK P2
+#define R3_PORT BIT5
 
-#define C0_BANK P6 //defines keypins for columns
-#define C0_PORT BIT6
-#define C1_BANK P6
-#define C1_PORT BIT7
-#define C2_BANK P2
-#define C2_PORT BIT3
+#define C0_BANK P3 //defines keypins for columns
+#define C0_PORT BIT0
+#define C1_BANK P5
+#define C1_PORT BIT6
+#define C2_BANK P5
+#define C2_PORT BIT7
 
 #define COL0_ON        C0_BANK->DIR |=  C0_PORT; C0_BANK->OUT |=  C0_PORT   //to turn on column 0
 #define COL0_OFF       C0_BANK->DIR &= ~C0_PORT; C0_BANK->OUT &= ~C0_PORT   //to turn off column 0
