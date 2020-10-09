@@ -1,6 +1,6 @@
 /***********************************************************************************************************
   Title:        EGR 326 Lab 5
-  Filename:     Part_I.c
+  Filename:     Part_I.c, rtc.h, rtc.c, keypad.c, keypad.h
   Author(s):    Mathew J. Yerian-French
   Date:         10/02/2020
   Instructor:   Professor Brian Krug
@@ -8,7 +8,7 @@
   Note:
 ************************************************************************************************************
 WIRING FOR MSP432
-RTC: SCL - PX.X | SDA - PX.X | VCC - 3.3V | GND - GND |
+RTC: SCL - P6.5 | SDA - P6.4 | VCC - 3.3V | GND - GND |
 ***********************************************************************************************************/
 #include "msp.h"
 #include "keypad.h"
