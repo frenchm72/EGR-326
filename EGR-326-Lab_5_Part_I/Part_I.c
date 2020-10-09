@@ -12,35 +12,13 @@ RTC: SCL - PX.X | SDA - PX.X | VCC - 3.3V | GND - GND |
 ***********************************************************************************************************/
 #include "msp.h"
 #include "keypad.h"
+#include "rtc.h"
 #include <string.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <math.h>
 
 #define SLAVEADD 0x00 //solder pads on A0, A1, and A2 on the module
-
-struct time
-{
-int monthT,monthO,
-    dayT, dayO,
-    yearC, yearH, yearD, yearO,
-    hourT, hourO,
-    minT,minO,
-    secT,secO;
-};
-
-enum states
-{
-    getMonthT,getMonthO,
-    getDayT, getDayO,
-    getYearC, getYearH, getYearD, getYearO,
-    getHourT, getHourO,
-    getMinT,getMinO,
-    getSecT,getSecO
-} state;
-
-struct time setRTC;//time to set to the RTC
-struct time readRTC;//time read from the RTC
 
 void getSetDateTime(void);
 
@@ -50,6 +28,7 @@ void main(void)
 
     int keyMain = 0;
 
+    I2C1_init();//init I2C
     KeyInit();//init keypad
     SysTickInit();
     interON();//turns col on
@@ -57,6 +36,7 @@ void main(void)
     NVIC->ISER[1] = 1 << ((PORT2_IRQn) & 31);
     __enable_interrupt();
 
+    printf("\n\n\nPlease Press '*' to Enter the Time and Date\n\n");
     while(1)
     {
         if(keyPressed)//waits for an interrupt
@@ -71,31 +51,36 @@ void main(void)
                    getSetDateTime();
 
                    printf("\nYou Have Entered:"
-                           "%d%d/%d%d/%d%d%d%d %d%d:%d%d:%d%d\n",
-                          setRTC.monthT, setRTC.monthO,
+                           "\n%s\n%s %d%d, 2%d%d%d %d%d:%d%d:%d%d %s\n",
+                          dayOfWeekDecode(setRTC.dayOfWeek),
+                          monthDecode(setRTC.monthT *10 + setRTC.monthO),
                           setRTC.dayT, setRTC.dayO,
-                          setRTC.yearC, setRTC.yearH, setRTC.yearD, setRTC.yearO,
+                          setRTC.yearC, setRTC.yearD, setRTC.yearO,
                           setRTC.hourT, setRTC.hourO,
                           setRTC.minT, setRTC.minO,
-                          setRTC.secT, setRTC.secO);
+                          setRTC.secT, setRTC.secO,
+                          (setRTC.PMAM ? "PM" : "AM"));
+                   SetRTC();//setDate and time
+                   break;
             }
         }
     }
+    while(1){
+    printf("\n\nPlease Press '*' to See the Time and Date\n");
+    while(1){
+        if(keyPressed)//waits for an interrupt
+        {
+            keyMain = readKey();//reads the key
+            if(!(strcmp(decodeKey(keyMain),"*")))
+            {
+                ReadRTC();
+                break;
+            }
+        }
+    }
+    }
 
 }
-
-////configuration of eUSCI as I2C mode
-////this code was pulled and heavily commented from professor kandalofts slide with permissions
-//EUSCI_B0->CTLW0 |= EUSCI_B_CTLW0_SWRST;// disables the eUSCI0 while configuration
-////or holds in a reset state for configuration
-//EUSCI_B0->CTLW0 |=  EUSCI_B_CTLW0_MODE_3| // this directly points to I2C mode
-//                    EUSCI_B_CTLW0_MST|//master mode select
-//                    EUSCI_B_CTLW0_SYNC;//enabling syncornus mode
-//EUSCI_B0->CTLW0 |= EUSCI_B_CTLW0_UCSSEL_2;       // Select the SMCLK for the module
-//EUSCI_B0->BRW = 0x001E;      // Commands a divder (30) resulting in 100kHz
-//EUSCI_B0->I2CSA = SLAVEADD; //slave address will be a macro pointing to the address of the RTC
-//EUSCI_B0->CTLW0 &= ~EUSCI_B_CTLW0_SWRST; //enables eUSCI0 after config
-
 
 void getSetDateTime(void)
 {
@@ -153,6 +138,7 @@ switch(state)
                     {
                         setRTC.monthO = atoi(decodeKey(key));
                         printf("%d\n", setRTC.monthO);//print the decoded key
+                        printf("%s\n",monthDecode(setRTC.monthT *10 + setRTC.monthO));
                         key = 0;
                         state = getDayT;
                         break;
@@ -195,7 +181,7 @@ switch(state)
                     if((setRTC.dayT == 0) && (atoi(decodeKey(key)) == 0))
                         printf("%s is not valid."
                                 "\nPlease Try Again\n->", decodeKey(key));
-                    else if((setRTC.dayT == 3) && (atoi(decodeKey(key)) > 2))
+                    else if((setRTC.dayT == 3) && (atoi(decodeKey(key)) > 1))
                         printf("%s is not valid."
                                 "\nPlease Try Again\n->", decodeKey(key));
                     else if( !(strcmp(decodeKey(key),"X")) ||
@@ -208,15 +194,43 @@ switch(state)
                         setRTC.dayO = atoi(decodeKey(key));
                         printf("%d\n", setRTC.dayO);//print the decoded key
                         key = 0;
+                        state = getDayOfWeek;
+                        break;
+                    }
+                }
+            }
+        break;
+    case getDayOfWeek:
+                printf("Please Enter the Day of week from Sun-Saturday (1-7)\n->");
+            while(1)
+            {
+                if(keyPressed)//waits for an interrupt
+                {
+                    key = readKey();//reads the key
+                    if((atoi(decodeKey(key)) == 0))
+                        printf("%s is not valid."
+                                "\nPlease Try Again\n->", decodeKey(key));
+                    else if((atoi(decodeKey(key)) > 7))
+                        printf("%s is not valid."
+                                "\nPlease Try Again\n->", decodeKey(key));
+                    else if( !(strcmp(decodeKey(key),"X")) ||
+                        !(strcmp(decodeKey(key),"#")) ||
+                        !(strcmp(decodeKey(key),"*")))
+                            printf("%s is not valid.\nPlease Try Again\n->"
+                                , decodeKey(key));
+                    else
+                    {
+                        setRTC.dayOfWeek = atoi(decodeKey(key));
+                        printf("%s\n", dayOfWeekDecode(setRTC.dayOfWeek));//print the decoded key
+                        key = 0;
                         state = getYearC;
                         break;
                     }
                 }
             }
         break;
-
     case getYearC:
-                printf("Please Enter the Century's of the Year\n->");
+                printf("Please Enter the Century of the Year (1 or 0)\n->");
             while(1)
             {
                 if(keyPressed)//waits for an interrupt
@@ -224,36 +238,14 @@ switch(state)
                     key = readKey();//reads the key
                     if(!(strcmp(decodeKey(key),"X")) ||
                         !(strcmp(decodeKey(key),"#")) ||
-                        !(strcmp(decodeKey(key),"*")))
+                        !(strcmp(decodeKey(key),"*")) ||
+                        (atoi(decodeKey(key)) > 1))
                             printf("%s is not valid.\nPlease Try Again\n->"
                                 , decodeKey(key));
                     else
                     {
                         setRTC.yearC = atoi(decodeKey(key));
                         printf("%d\n", setRTC.yearC);//print the decoded key
-                        key = 0;
-                        state = getYearH;
-                        break;
-                    }
-                }
-            }
-        break;
-    case getYearH:
-                printf("Please Enter the Hundred's of the Year\n->");
-            while(1)
-            {
-                if(keyPressed)//waits for an interrupt
-                {
-                    key = readKey();//reads the key
-                    if(!(strcmp(decodeKey(key),"X")) ||
-                        !(strcmp(decodeKey(key),"#")) ||
-                        !(strcmp(decodeKey(key),"*")))
-                            printf("%s is not valid.\nPlease Try Again\n->"
-                                , decodeKey(key));
-                    else
-                    {
-                        setRTC.yearH = atoi(decodeKey(key));
-                        printf("%d\n", setRTC.yearH);//print the decoded key
                         key = 0;
                         state = getYearD;
                         break;
@@ -262,27 +254,27 @@ switch(state)
             }
         break;
     case getYearD:
-               printf("Please Enter the Decade's of the Year\n->");
-           while(1)
-           {
-               if(keyPressed)//waits for an interrupt
-               {
-                   key = readKey();//reads the key
-                   if(!(strcmp(decodeKey(key),"X")) ||
-                       !(strcmp(decodeKey(key),"#")) ||
-                       !(strcmp(decodeKey(key),"*")))
-                           printf("%s is not valid.\nPlease Try Again\n->"
-                               , decodeKey(key));
-                   else
-                   {
-                       setRTC.yearD = atoi(decodeKey(key));
-                       printf("%d\n", setRTC.yearD);//print the decoded key
-                       key = 0;
-                       state = getYearO;
-                       break;
-                   }
-               }
-           }
+                printf("Please Enter the Decade of the Year\n->");
+            while(1)
+            {
+                if(keyPressed)//waits for an interrupt
+                {
+                    key = readKey();//reads the key
+                    if(!(strcmp(decodeKey(key),"X")) ||
+                        !(strcmp(decodeKey(key),"#")) ||
+                        !(strcmp(decodeKey(key),"*")))
+                            printf("%s is not valid.\nPlease Try Again\n->"
+                                , decodeKey(key));
+                    else
+                    {
+                        setRTC.yearD = atoi(decodeKey(key));
+                        printf("%d\n", setRTC.yearD);//print the decoded key
+                        key = 0;
+                        state = getYearO;
+                        break;
+                    }
+                }
+            }
         break;
     case getYearO:
                 printf("Please Enter the One's of the Year\n->");
@@ -414,7 +406,7 @@ switch(state)
         break;
 
     case getSecT:
-                printf("Please Enter the Ten's of the Second\n->");
+                printf("Please Enter the Ten's of the Seconds\n->");
             while(1)
             {
                 if(keyPressed)//waits for an interrupt
@@ -439,7 +431,7 @@ switch(state)
             }
         break;
     case getSecO:
-                printf("Please Enter the One's of the Minute\n->");
+                printf("Please Enter the One's of the Seconds\n->");
             while(1)
             {
                 if(keyPressed)//waits for an interrupt
@@ -456,6 +448,31 @@ switch(state)
                         setRTC.secO = atoi(decodeKey(key));
                         printf("%d\n", setRTC.secO);//print the decoded key
                         key = 0;
+                        state = getPMAM;
+                        break;
+                    }
+                }
+            }
+        break;
+    case getPMAM:
+                printf("Please Enter 1 for PM and 0 for AM\n->");
+            while(1)
+            {
+                if(keyPressed)//waits for an interrupt
+                {
+                    key = readKey();//reads the key
+                    if( !(strcmp(decodeKey(key),"X")) ||
+                        !(strcmp(decodeKey(key),"#")) ||
+                        !(strcmp(decodeKey(key),"*")) ||
+                        (atoi(decodeKey(key)) > 1) )
+                            printf("%s is not valid.\nPlease Try Again\n->"
+                                , decodeKey(key));
+
+                    else
+                    {
+                        setRTC.PMAM = atoi(decodeKey(key));
+                        printf("%s\n", (setRTC.PMAM ? "PM" : "AM"));//print the decoded key
+                        key = 0;
                         state = getMonthT;
                         complete = 0;
                         break;
@@ -468,4 +485,73 @@ switch(state)
             break;
     }
 }
+}
+
+//must be in main due to structure
+void ReadRTC(void){
+    unsigned char readBus;
+    unsigned char error;
+    do{
+        error = I2C1_byteRead(SLAVE_ADDR, 0x00, &readBus);//seconds
+        readRTC.secT = (readBus >> 4);
+        readRTC.secO = (readBus & 0x0F);
+        //printf("Sec:%d%d\n", readRTC.secT, readRTC.secO);
+
+        error = I2C1_byteRead(SLAVE_ADDR, 0x01, &readBus);//min
+        readRTC.minT = (readBus >> 4);
+        readRTC.minO = (readBus & 0x0F);
+        //printf("Min:%d%d\n", readRTC.minT, readRTC.minO);
+
+        error = I2C1_byteRead(SLAVE_ADDR, 0x02, &readBus);//hour and am/pm
+        readRTC.hourT = ((readBus >> 4) & 0b0001);
+        readRTC.hourO = (readBus & 0x0F);
+        //printf("Hour:%d%d\n", readRTC.hourT, readRTC.hourO);
+        readRTC.PMAM = ((readBus & 0b00100000) >> 5);//pm/am
+        //printf("PMAM:%s\n", (readRTC.PMAM ? "PM" : "AM"));
+
+        error = I2C1_byteRead(SLAVE_ADDR, 0x03, &readBus);//day of week
+        readRTC.dayOfWeek = (readBus & 0x0F);
+        //printf("Day of Week:%s\n", dayOfWeekDecode(readRTC.dayOfWeek));
+
+        error = I2C1_byteRead(SLAVE_ADDR, 0x04, &readBus);//date
+        readRTC.dayT = (readBus >> 4);
+        readRTC.dayO = (readBus & 0x0F);
+        //printf("Date:%d%d\n", readRTC.dayT, readRTC.dayO);
+
+        error = I2C1_byteRead(SLAVE_ADDR, 0x05, &readBus);//month and century
+        readRTC.monthT = ((readBus  & 0b01111111) >> 4);
+        readRTC.monthO = (readBus & 0x0F);
+        readRTC.yearC = ((readBus  & 0b10000000) >> 7);
+        //printf("Month:%s\n yearC:%d\n", monthDecode(readRTC.monthT *10 + readRTC.monthO), readRTC.yearC);
+
+        error = I2C1_byteRead(SLAVE_ADDR, 0x06, &readBus);//month and century
+        readRTC.yearD = (readBus >> 4);
+        readRTC.yearO = (readBus & 0x0F);
+        //printf("Year:%d%d\n", readRTC.yearD, readRTC.yearO);
+
+        error = I2C1_byteRead(SLAVE_ADDR, 0x11, &readBus);//month and century
+        readRTC.temp = ((((readBus >> 4) & 0b01111111)*10) + (readBus & 0x0F));
+        //printf("Temp:%d\n\n", readRTC.temp);
+
+        //comment this out if you dont want it to print the date
+        printf("\n\nThe Date is:\n%s\n%s %d%d, 2%d%d%d ", dayOfWeekDecode(readRTC.dayOfWeek),
+               monthDecode(readRTC.monthT *10 + readRTC.monthO),
+               readRTC.dayT, readRTC.dayO,
+               readRTC.yearC, readRTC.yearD, readRTC.yearO);
+        printf("%d%d:%d%d:%d%d %s\n", readRTC.hourT, readRTC.hourO,
+               readRTC.minT, readRTC.minO,
+               readRTC.secT, readRTC.secO, (readRTC.PMAM ? "PM" : "AM"));
+        //printf("Tempature: %d\n", readRTC.temp);
+           error = 1;
+           } while (error == 0);
+}
+void SetRTC(void){
+
+    I2C1_byteWrite(SLAVE_ADDR, 0x00, ((setRTC.secT << 4) + setRTC.secO));//seconds
+    I2C1_byteWrite(SLAVE_ADDR, 0x01, ((setRTC.minT << 4) + setRTC.minO));//minutes
+    I2C1_byteWrite(SLAVE_ADDR, 0x02, (0b01000000 + (setRTC.PMAM << 5) + (setRTC.hourT << 4) + setRTC.hourO));//hour
+    I2C1_byteWrite(SLAVE_ADDR, 0x03, (setRTC.dayOfWeek)); //day of week
+    I2C1_byteWrite(SLAVE_ADDR, 0x04, ((setRTC.dayT << 4) + setRTC.dayO));//date
+    I2C1_byteWrite(SLAVE_ADDR, 0x05, ((setRTC.yearC << 7) + (setRTC.monthT << 4) + setRTC.monthO));//centery/ month
+    I2C1_byteWrite(SLAVE_ADDR, 0x06, ((setRTC.yearD << 4) + setRTC.yearO));//year
 }
