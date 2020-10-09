@@ -36,7 +36,7 @@ void main(void)
     NVIC->ISER[1] = 1 << ((PORT2_IRQn) & 31);
     __enable_interrupt();
 
-    printf("\n\n\nPlease Press '*' to Enter the Sub Menu\n\n");
+    printf("\n\nPlease Press '*' to Enter the Sub Menu\n\n");
     while(1){
         if(keyPressed)//waits for an interrupt
             {
@@ -51,30 +51,30 @@ void main(void)
                         keyMain = readKey();//reads the key
                         if(!(strcmp(decodeKey(keyMain),"1")))
                         {
-                            printf("\n\nThe Date is:\n%s\n%s %d%d, 2%d%d%d\n\n",
+                            printf("\nThe Date is:\n%s\n%s %d%d, 2%d%d%d\n\n",
                                    dayOfWeekDecode(readRTC.dayOfWeek),
                                    monthDecode(readRTC.monthT *10 + readRTC.monthO),
                                    readRTC.dayT, readRTC.dayO,
                                    readRTC.yearC, readRTC.yearD, readRTC.yearO);
 
-                            printf("\n\n\nPlease Press '*' to Enter the Sub Menu\n\n");
+                            printf("\nPlease Press '*' to Enter the Sub Menu\n\n");
                             break;
 
                         }
                         else if(!(strcmp(decodeKey(keyMain),"2")))
                         {
-                            printf("%d%d:%d%d:%d%d %s\n", readRTC.hourT, readRTC.hourO,
+                            printf("\nTime:\n%d%d:%d%d:%d%d %s\n", readRTC.hourT, readRTC.hourO,
                                readRTC.minT, readRTC.minO,
                                readRTC.secT, readRTC.secO, (readRTC.PMAM ? "PM" : "AM"));
 
-                            printf("\n\n\nPlease Press '*' to Enter the Sub Menu\n\n");
+                            printf("\nPlease Press '*' to Enter the Sub Menu\n\n");
                             break;
 
                         }
                         else if(!(strcmp(decodeKey(keyMain),"3")))
                         {
-                            printf("Tempature: %d%cC\n", readRTC.temp, 176);
-                            printf("\n\n\nPlease Press '*' to Enter the Sub Menu\n\n");
+                            printf("\nTempature:\n%d%cC\n", readRTC.temp, 176);
+                            printf("\nPlease Press '*' to Enter the Sub Menu\n\n");
                             break;
 
                         }
