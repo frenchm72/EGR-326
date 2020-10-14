@@ -8,7 +8,7 @@
   Note:         ValvanoWare code was used as recommended by this lab. However a custom function was made to
   send letters easier. This was done by modifying a new function ST7735_DrawStringMod in the libraries.
   This was used in replace of ST7735_DrawString to generate a 'clear' background. The libraries were pulled
-  from:http://users.ece.utexas.edu/~valvano/arm/downloadmsp432.html
+  from:http://users.ece.utexas.edu/~valvano/arm/downloadmsp432.html.
 ************************************************************************************************************
 WIRING FOR MSP432
 Full Color LCD: SCK - P9.5 | SDA - P9.7 | LED - 3.3V | A0 - P9.2 | VCC - 3.3V | GND - GND
