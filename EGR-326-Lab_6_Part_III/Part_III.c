@@ -24,14 +24,16 @@ Full Color LCD: SCK - P9.5 | SDA - P9.7 | LED - 3.3V | A0 - P9.2 | VCC - 3.3V | 
 
 #define BGCOLOR ST7735_Color565(0, 0, 0)//black
 #define TXTCOLOR ST7735_Color565(0, 0, 255) //white
-#define TXTSIZE 2
+#define TXTSIZE 4
 
 void Clock_Init48MHz(void);
+char* itoa(int value, char* buffer, int base);
+char* reverse(char *buffer, int i, int j);
+inline void swap(char *x, char *y);
 
 int main(void){
-    char  countC = '0';
     int i = 0;
-
+    char countC[10];
       Clock_Init48MHz();                   // set system clock to 48 MHz
       ST7735_InitR(INITR_GREENTAB);
       Output_On();
@@ -43,16 +45,65 @@ int main(void){
 
       ST7735_SetTextColor(TXTCOLOR);
       ST7735_FillScreen(BGCOLOR);
+
+      while(1){
       for(i=0;i<10;i++){
-          asprintf(countC, "%d", i);//convert number to string
-          ST7735_DrawStringMod(0, 4, countC, TXTCOLOR, BGCOLOR, TXTSIZE);
+          atoi(i, countC, 10);
+          ST7735_DrawStringMod(2, 1, countC, TXTCOLOR, BGCOLOR, TXTSIZE);
           __delay_cycles(48000000);
       }
-
-      while(1);
+      }
 }
 
 
+char* itoa(int value, char* buffer, int base){
+    // invalid input
+    if (base < 2 || base > 32)
+        return buffer;
+
+    // consider absolute value of number
+    int n = abs(value);
+
+    int i = 0;
+    while (n)
+    {
+        int r = n % base;
+
+        if (r >= 10)
+            buffer[i++] = 65 + (r - 10);
+        else
+            buffer[i++] = 48 + r;
+
+        n = n / base;
+    }
+
+    // if number is 0
+    if (i == 0)
+        buffer[i++] = '0';
+
+    // If base is 10 and value is negative, the resulting string
+    // is preceded with a minus sign (-)
+    // With any other base, value is always considered unsigned
+    if (value < 0 && base == 10)
+        buffer[i++] = '-';
+
+    buffer[i] = '\0'; // null terminate string
+
+    // reverse the string and return it
+    return reverse(buffer, 0, i - 1);
+}
+// inline function to swap two numbers
+inline void swap(char *x, char *y) {
+    char t = *x; *x = *y; *y = t;
+}
+
+// function to reverse buffer[i..j]
+char* reverse(char *buffer, int i, int j){
+    while (i < j)
+        swap(&buffer[i++], &buffer[j--]);
+
+    return buffer;
+}
 
 void Clock_Init48MHz(void){
     // Configure Flash wait-state to 1 for both banks 0 & 1
