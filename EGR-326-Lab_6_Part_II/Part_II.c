@@ -4,7 +4,7 @@
   Author(s):    Mathew J. Yerian-French
   Date:         10/09/2020
   Instructor:   Professor Brian Krug
-  Description:  Part I of Lab 6
+  Description:  Part II of Lab 6
   Note:         ValvanoWare code was used as recommended by this lab. However a custom function was made to
   send letters easier. This was done by modifying a new function ST7735_DrawStringMod in the libraries.
   This was used in replace of ST7735_DrawString to generate a 'clear' background. The libraries were pulled
