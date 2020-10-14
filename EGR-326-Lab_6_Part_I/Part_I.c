@@ -5,7 +5,10 @@
   Date:         10/09/2020
   Instructor:   Professor Brian Krug
   Description:  Part I of Lab 6
-  Note:
+  Note:         ValvanoWare code was used as recommended by this lab. However a custom function was made to
+  send letters easier. This was done by modifying a new function ST7735_DrawStringMod in the libraries.
+  This was used in replace of ST7735_DrawString to generate a 'clear' background. The libraries were pulled
+  from:http://users.ece.utexas.edu/~valvano/arm/downloadmsp432.html
 ************************************************************************************************************
 WIRING FOR MSP432
 Full Color LCD: SCK - P9.5 | SDA - P9.7 | LED - 3.3V | A0 - P9.2 | VCC - 3.3V | GND - GND
@@ -30,15 +33,16 @@ int main(void){
   uint8_t i, j, bounce = 0, bounce2 = 0;
   Clock_Init48MHz();                   // set system clock to 48 MHz
   ST7735_InitR(INITR_GREENTAB);
-  //Output_On();
-  //Output_Clear();
+
+  Output_On();
+  Output_Clear();
   ST7735_SetTextColor(TXTCOLOR);
   //ST7735_DrawStringMod(2, 7, display, TXTCOLOR, BGCOLOR, 2);
   ST7735_FillScreen(BGCOLOR);//ST7735_FillScreen(ST7735_BLUE);
   while(1){
       //shifts the text
       ST7735_DrawStringMod(j, i, display, TXTCOLOR, BGCOLOR, TXTSIZE);
-      __delay_cycles(20833333);
+      __delay_cycles(48000000);
       //this erases just the text so it doesnt take as long
       ST7735_FillRect(j*6*TXTSIZE, i*10, length*6*TXTSIZE, TXTSIZE*10, BGCOLOR);
       if(j >= 14)// if size is 2 then 4 if 1 then 14
