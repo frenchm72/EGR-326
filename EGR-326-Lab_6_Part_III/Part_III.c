@@ -1,6 +1,6 @@
 /***********************************************************************************************************
   Title:        EGR 326 Lab 6
-  Filename:     Part_III.c, ST7735.h, ST7735.c
+  Filename:     Part_III.c, ST7735.h, ST7735.c, image.h
   Author(s):    Mathew J. Yerian-French
   Date:         10/09/2020
   Instructor:   Professor Brian Krug
