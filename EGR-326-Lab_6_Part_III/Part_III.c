@@ -11,7 +11,8 @@
   from:http://users.ece.utexas.edu/~valvano/arm/downloadmsp432.html. A gvsulogo was used from web site
 ************************************************************************************************************
 WIRING FOR MSP432
-Full Color LCD: SCK - P9.5 | SDA - P9.7 | LED - 3.3V | A0 - P9.2 | VCC - 3.3V | GND - GND
+Full Color LCD: SCK - P9.5 | SDA - P9.7 | LED - 3.3V | A0 - P9.2 | RST - P9.3 |
+                VCC - 3.3V | GND - GND  | CS  - P9.4
 ***********************************************************************************************************/
 #include "msp.h"
 #include "image.h"
@@ -26,14 +27,24 @@ Full Color LCD: SCK - P9.5 | SDA - P9.7 | LED - 3.3V | A0 - P9.2 | VCC - 3.3V | 
 #define TXTCOLOR ST7735_Color565(0, 0, 255) //white
 #define TXTSIZE 4
 
+#define rightwall 106
+#define leftwall 2
+#define top 2
+#define bot 130
+
+#define centerX 55
+#define centerY 65
+
 void Clock_Init48MHz(void);
-char* itoa(int value, char* buffer, int base);
-char* reverse(char *buffer, int i, int j);
-inline void swap(char *x, char *y);
+
+enum states{//count and corner sequence
+    zero, one, two,
+    three, four, five,
+    six, seven,
+    eight, nine
+} state;
 
 int main(void){
-    int i = 0;
-    char countC[10];
       Clock_Init48MHz();                   // set system clock to 48 MHz
       ST7735_InitR(INITR_GREENTAB);
       Output_On();
@@ -43,66 +54,66 @@ int main(void){
 
       __delay_cycles(48000000*3);
 
-      ST7735_SetTextColor(TXTCOLOR);
+//      ST7735_SetTextColor(TXTCOLOR);
       ST7735_FillScreen(BGCOLOR);
-
       while(1){
-      for(i=0;i<10;i++){
-          atoi(i, countC, 10);
-          ST7735_DrawStringMod(2, 1, countC, TXTCOLOR, BGCOLOR, TXTSIZE);
-          __delay_cycles(48000000);
+          switch(state)
+              {
+              case zero:
+                  ST7735_DrawStringMod(leftwall, top, "0", TXTCOLOR, BGCOLOR, TXTSIZE);
+                  __delay_cycles(48000000);
+                  ST7735_FillRect(leftwall, top, 2*40, 2*40, BGCOLOR);
+                  state = one;
+              case one:
+                  ST7735_DrawStringMod(rightwall+4, bot, "1", TXTCOLOR, BGCOLOR, TXTSIZE);
+                  __delay_cycles(48000000);
+                  ST7735_FillRect(rightwall+4, bot, 2*40, 2*40, BGCOLOR);
+                  state = two;
+              case two:
+                  ST7735_DrawStringMod(leftwall, bot, "2", TXTCOLOR, BGCOLOR, TXTSIZE);
+                  __delay_cycles(48000000);
+                  ST7735_FillRect(leftwall, bot, 2*40, 2*40, BGCOLOR);
+                  state = three;
+              case three:
+                  ST7735_DrawStringMod(rightwall, top, "3", TXTCOLOR, BGCOLOR, TXTSIZE);
+                  __delay_cycles(48000000);
+                  ST7735_FillRect(rightwall, top, 2*40, 2*40, BGCOLOR);
+                  state = four;
+              case four:
+                  ST7735_DrawStringMod(leftwall, top, "4", TXTCOLOR, BGCOLOR, TXTSIZE);
+                  __delay_cycles(48000000);
+                  ST7735_FillRect(leftwall, top, 2*40, 2*40, BGCOLOR);
+                  state = five;
+              case five:
+                  ST7735_DrawStringMod(rightwall, bot, "5", TXTCOLOR, BGCOLOR, TXTSIZE);
+                  __delay_cycles(48000000);
+                  ST7735_FillRect(rightwall, bot, 2*40, 2*40, BGCOLOR);
+                  state = six;
+              case six:
+                  ST7735_DrawStringMod(leftwall, bot, "6", TXTCOLOR, BGCOLOR, TXTSIZE);
+                  __delay_cycles(48000000);
+                  ST7735_FillRect(leftwall, bot, 2*40, 2*40, BGCOLOR);
+                  state = seven;
+              case seven:
+                  ST7735_DrawStringMod(rightwall, top, "7", TXTCOLOR, BGCOLOR, TXTSIZE);
+                  __delay_cycles(48000000);
+                  ST7735_FillRect(rightwall, top, 2*40, 2*40, BGCOLOR);
+                  state = eight;
+              case eight:
+                  ST7735_DrawStringMod(leftwall, top, "8", TXTCOLOR, BGCOLOR, TXTSIZE);
+                  __delay_cycles(48000000);
+                  ST7735_FillRect(leftwall, top, 2*40, 2*40, BGCOLOR);
+                  state = nine;
+              case nine:
+                  ST7735_DrawStringMod(centerX, centerY, "9", TXTCOLOR, BGCOLOR, TXTSIZE);
+                  __delay_cycles(48000000*3);
+                  ST7735_FillRect(centerX, centerY, 2*40, 2*40, BGCOLOR);
+                  state = zero;
+              default:
+                  state = zero;
+                  break;
+              }
       }
-      }
-}
-
-
-char* itoa(int value, char* buffer, int base){
-    // invalid input
-    if (base < 2 || base > 32)
-        return buffer;
-
-    // consider absolute value of number
-    int n = abs(value);
-
-    int i = 0;
-    while (n)
-    {
-        int r = n % base;
-
-        if (r >= 10)
-            buffer[i++] = 65 + (r - 10);
-        else
-            buffer[i++] = 48 + r;
-
-        n = n / base;
-    }
-
-    // if number is 0
-    if (i == 0)
-        buffer[i++] = '0';
-
-    // If base is 10 and value is negative, the resulting string
-    // is preceded with a minus sign (-)
-    // With any other base, value is always considered unsigned
-    if (value < 0 && base == 10)
-        buffer[i++] = '-';
-
-    buffer[i] = '\0'; // null terminate string
-
-    // reverse the string and return it
-    return reverse(buffer, 0, i - 1);
-}
-// inline function to swap two numbers
-inline void swap(char *x, char *y) {
-    char t = *x; *x = *y; *y = t;
-}
-
-// function to reverse buffer[i..j]
-char* reverse(char *buffer, int i, int j){
-    while (i < j)
-        swap(&buffer[i++], &buffer[j--]);
-
-    return buffer;
 }
 
 void Clock_Init48MHz(void){

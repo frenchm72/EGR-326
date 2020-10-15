@@ -11,7 +11,8 @@
   from:http://users.ece.utexas.edu/~valvano/arm/downloadmsp432.html. A gvsulogo was used from web site
 ************************************************************************************************************
 WIRING FOR MSP432
-Full Color LCD: SCK - P9.5 | SDA - P9.7 | LED - 3.3V | A0 - P9.2 | VCC - 3.3V | GND - GND
+Full Color LCD: SCK - P9.5 | SDA - P9.7 | LED - 3.3V | A0 - P9.2 | RST - P9.3 |
+                VCC - 3.3V | GND - GND  | CS  - P9.4
 ***********************************************************************************************************/
 #include "msp.h"
 #include "image.h"
