@@ -896,7 +896,7 @@ void ST7735_DrawFastHLine(int16_t x, int16_t y, int16_t w, uint16_t color) {
 // Input: color 16-bit color, which can be produced by ST7735_Color565()
 // Output: none
 void ST7735_FillScreen(uint16_t color) {
-  ST7735_FillRect(-2, -1, _width, _height, color);  // original
+  ST7735_FillRect(-2, -2, _width+2, _height+2, color);  // original
 //  screen is actually 129 by 161 pixels, x 0 to 128, y goes from 0 to 160
 }
 
@@ -1159,13 +1159,13 @@ uint32_t ST7735_DrawString(uint16_t x, uint16_t y, char *pt, int16_t textColor){
 //like the other functions
 uint32_t ST7735_DrawStringMod(uint16_t x, uint16_t y, char *pt, int16_t textColor, int16_t bgColor, uint8_t size){
   uint32_t count = 0;
-  if(y>15) return 0;
+  //if(y>15) return 0;
   while(*pt){
       //ST7735_DrawCharS(x*6, y*10, *pt, textColor, ST7735_BLACK, 1);
-      ST7735_DrawCharS(x*6*size, y*10, *pt, textColor, bgColor, size);
+      ST7735_DrawCharS(x, y, *pt, textColor, bgColor, size);
     pt++;
-    x = x+1;
-    if(x>20) return count;  // number of characters printed
+    x = x+6*size;
+    //if(x>20) return count;  // number of characters printed
     count++;
   }
   return count;  // number of characters printed

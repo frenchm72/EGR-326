@@ -43,10 +43,10 @@ int main(void){
   while(1){
       //shifts the text
       ST7735_DrawStringMod(j, i, display, TXTCOLOR, BGCOLOR, TXTSIZE);
-      __delay_cycles(48000000);
+      __delay_cycles(480000*5);
       //this erases just the text so it doesnt take as long
-      ST7735_FillRect(j*6*TXTSIZE, i*10, length*6*TXTSIZE, TXTSIZE*10, BGCOLOR);
-      if(j >= 14)// if size is 2 then 4 if 1 then 14
+      ST7735_FillRect(j, i, 2*20+2, 2*20+2, BGCOLOR);
+      if(j >= 87)// if size is 2 then 4 if 1 then 14
           bounce = 1;
       else if(j == 0)
           bounce = 0;
@@ -54,7 +54,7 @@ int main(void){
           j--;
       else
           j++;
-    if(i >= 15)//if size 2 then 14 if size 1 then 15
+    if(i >= 152)//if size 2 then 14 if size 1 then 15
         bounce2 = 1;
     else if(i == 0)
         bounce2 = 0;
