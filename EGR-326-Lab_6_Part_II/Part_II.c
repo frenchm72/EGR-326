@@ -23,8 +23,8 @@ Full Color LCD: SCK - P9.5 | SDA - P9.7 | LED - 3.3V | A0 - P9.2 | RST - P9.3 |
 #include <math.h>
 #include <stdint.h>
 
-#define BGCOLOR ST7735_Color565(0, 0, 0)//black
-#define TXTCOLOR ST7735_Color565(0, 0, 255) //white
+#define BGCOLOR ST7735_Color565(0, 0, 255)//black
+#define TXTCOLOR ST7735_Color565(0, 0, 0) //white
 #define TXTSIZE 2
 
 void Clock_Init48MHz(void);

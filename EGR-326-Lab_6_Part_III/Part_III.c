@@ -23,8 +23,8 @@ Full Color LCD: SCK - P9.5 | SDA - P9.7 | LED - 3.3V | A0 - P9.2 | RST - P9.3 |
 #include <math.h>
 #include <stdint.h>
 
-#define BGCOLOR ST7735_Color565(0, 0, 0)//black
-#define TXTCOLOR ST7735_Color565(0, 0, 255) //white
+#define BGCOLOR ST7735_Color565(0, 0, 255)//black
+#define TXTCOLOR ST7735_Color565(0, 0, 0) //white
 #define TXTSIZE 4
 
 #define rightwall 106
@@ -49,6 +49,8 @@ int main(void){
       ST7735_InitR(INITR_GREENTAB);
       Output_On();
 
+      int corner = 0;
+
       ST7735_SetRotation(0);
       ST7735_DrawBitmap(0, 160, gvlogo, 128, 160);
 
@@ -60,55 +62,327 @@ int main(void){
           switch(state)
               {
               case zero:
+                  if(corner == 0)
+                  {
                   ST7735_DrawStringMod(leftwall, top, "0", TXTCOLOR, BGCOLOR, TXTSIZE);
                   __delay_cycles(48000000);
                   ST7735_FillRect(leftwall, top, 2*40, 2*40, BGCOLOR);
+                  }
+                  else if(corner == 1)
+                  {
+                  ST7735_DrawStringMod(rightwall, bot, "0", TXTCOLOR, BGCOLOR, TXTSIZE);
+                  __delay_cycles(48000000);
+                  ST7735_FillRect(rightwall, bot, 2*40, 2*40, BGCOLOR);
+                  }
+                  else if(corner == 2)
+                  {
+                  ST7735_DrawStringMod(leftwall, bot, "0", TXTCOLOR, BGCOLOR, TXTSIZE);
+                  __delay_cycles(48000000);
+                  ST7735_FillRect(leftwall, bot, 2*40, 2*40, BGCOLOR);
+                  }
+                  else if(corner == 3)
+                  {
+                  ST7735_DrawStringMod(rightwall, top, "0", TXTCOLOR, BGCOLOR, TXTSIZE);
+                  __delay_cycles(48000000);
+                  ST7735_FillRect(rightwall, top, 2*40, 2*40, BGCOLOR);
+                  }
+                  else
+                  {
+                  ST7735_DrawStringMod(centerX, centerY, "0", TXTCOLOR, BGCOLOR, TXTSIZE);
+                  __delay_cycles(48000000);
+                  ST7735_FillRect(centerX, centerY, 2*40, 2*40, BGCOLOR);
+                  }
                   state = one;
               case one:
-                  ST7735_DrawStringMod(rightwall+4, bot, "1", TXTCOLOR, BGCOLOR, TXTSIZE);
+                  if(corner == 0)
+                  {
+                      ST7735_DrawStringMod(leftwall, top, "1", TXTCOLOR, BGCOLOR, TXTSIZE);
+                      __delay_cycles(48000000);
+                      ST7735_FillRect(leftwall, top, 2*40, 2*40, BGCOLOR);
+                  }
+                  else if(corner == 1)
+                  {
+                  ST7735_DrawStringMod(rightwall, bot, "1", TXTCOLOR, BGCOLOR, TXTSIZE);
                   __delay_cycles(48000000);
-                  ST7735_FillRect(rightwall+4, bot, 2*40, 2*40, BGCOLOR);
+                  ST7735_FillRect(rightwall, bot, 2*40, 2*40, BGCOLOR);
+                  }
+                  else if(corner == 2)
+                  {
+                  ST7735_DrawStringMod(leftwall, bot, "1", TXTCOLOR, BGCOLOR, TXTSIZE);
+                  __delay_cycles(48000000);
+                  ST7735_FillRect(leftwall, bot, 2*40, 2*40, BGCOLOR);
+                  }
+                  else if(corner == 3)
+                  {
+                  ST7735_DrawStringMod(rightwall, top, "1", TXTCOLOR, BGCOLOR, TXTSIZE);
+                  __delay_cycles(48000000);
+                  ST7735_FillRect(rightwall, top, 2*40, 2*40, BGCOLOR);
+                  }
+                  else
+                  {
+                  ST7735_DrawStringMod(centerX, centerY, "1", TXTCOLOR, BGCOLOR, TXTSIZE);
+                  __delay_cycles(48000000);
+                  ST7735_FillRect(centerX, centerY, 2*40, 2*40, BGCOLOR);
+                  }
                   state = two;
               case two:
+                  if(corner == 0)
+                  {
+                      ST7735_DrawStringMod(leftwall, top, "2", TXTCOLOR, BGCOLOR, TXTSIZE);
+                      __delay_cycles(48000000);
+                      ST7735_FillRect(leftwall, top, 2*40, 2*40, BGCOLOR);
+                  }
+                  else if(corner == 1)
+                  {
+                  ST7735_DrawStringMod(rightwall, bot, "2", TXTCOLOR, BGCOLOR, TXTSIZE);
+                  __delay_cycles(48000000);
+                  ST7735_FillRect(rightwall, bot, 2*40, 2*40, BGCOLOR);
+                  }
+                  else if(corner == 2)
+                  {
                   ST7735_DrawStringMod(leftwall, bot, "2", TXTCOLOR, BGCOLOR, TXTSIZE);
                   __delay_cycles(48000000);
                   ST7735_FillRect(leftwall, bot, 2*40, 2*40, BGCOLOR);
+                  }
+                  else if(corner == 3)
+                  {
+                  ST7735_DrawStringMod(rightwall, top, "2", TXTCOLOR, BGCOLOR, TXTSIZE);
+                  __delay_cycles(48000000);
+                  ST7735_FillRect(rightwall, top, 2*40, 2*40, BGCOLOR);
+                  }
+                  else
+                  {
+                  ST7735_DrawStringMod(centerX, centerY, "2", TXTCOLOR, BGCOLOR, TXTSIZE);
+                  __delay_cycles(48000000);
+                  ST7735_FillRect(centerX, centerY, 2*40, 2*40, BGCOLOR);
+                  }
                   state = three;
               case three:
+                  if(corner == 0)
+                  {
+                      ST7735_DrawStringMod(leftwall, top, "3", TXTCOLOR, BGCOLOR, TXTSIZE);
+                      __delay_cycles(48000000);
+                      ST7735_FillRect(leftwall, top, 2*40, 2*40, BGCOLOR);
+                  }
+                  else if(corner == 1)
+                  {
+                  ST7735_DrawStringMod(rightwall, bot, "3", TXTCOLOR, BGCOLOR, TXTSIZE);
+                  __delay_cycles(48000000);
+                  ST7735_FillRect(rightwall, bot, 2*40, 2*40, BGCOLOR);
+                  }
+                  else if(corner == 2)
+                  {
+                  ST7735_DrawStringMod(leftwall, bot, "3", TXTCOLOR, BGCOLOR, TXTSIZE);
+                  __delay_cycles(48000000);
+                  ST7735_FillRect(leftwall, bot, 2*40, 2*40, BGCOLOR);
+                  }
+                  else if(corner == 3)
+                  {
                   ST7735_DrawStringMod(rightwall, top, "3", TXTCOLOR, BGCOLOR, TXTSIZE);
                   __delay_cycles(48000000);
                   ST7735_FillRect(rightwall, top, 2*40, 2*40, BGCOLOR);
+                  }
+                  else
+                  {
+                  ST7735_DrawStringMod(centerX, centerY, "3", TXTCOLOR, BGCOLOR, TXTSIZE);
+                  __delay_cycles(48000000);
+                  ST7735_FillRect(centerX, centerY, 2*40, 2*40, BGCOLOR);
+                  }
                   state = four;
               case four:
-                  ST7735_DrawStringMod(leftwall, top, "4", TXTCOLOR, BGCOLOR, TXTSIZE);
+                  if(corner == 0)
+                  {
+                      ST7735_DrawStringMod(leftwall, top, "4", TXTCOLOR, BGCOLOR, TXTSIZE);
+                      __delay_cycles(48000000);
+                      ST7735_FillRect(leftwall, top, 2*40, 2*40, BGCOLOR);
+                  }
+                  else if(corner == 1)
+                  {
+                  ST7735_DrawStringMod(rightwall, bot, "4", TXTCOLOR, BGCOLOR, TXTSIZE);
                   __delay_cycles(48000000);
-                  ST7735_FillRect(leftwall, top, 2*40, 2*40, BGCOLOR);
+                  ST7735_FillRect(rightwall, bot, 2*40, 2*40, BGCOLOR);
+                  }
+                  else if(corner == 2)
+                  {
+                  ST7735_DrawStringMod(leftwall, bot, "4", TXTCOLOR, BGCOLOR, TXTSIZE);
+                  __delay_cycles(48000000);
+                  ST7735_FillRect(leftwall, bot, 2*40, 2*40, BGCOLOR);
+                  }
+                  else if(corner == 3)
+                  {
+                  ST7735_DrawStringMod(rightwall, top, "4", TXTCOLOR, BGCOLOR, TXTSIZE);
+                  __delay_cycles(48000000);
+                  ST7735_FillRect(rightwall, top, 2*40, 2*40, BGCOLOR);
+                  }
+                  else
+                  {
+                  ST7735_DrawStringMod(centerX, centerY, "4", TXTCOLOR, BGCOLOR, TXTSIZE);
+                  __delay_cycles(48000000);
+                  ST7735_FillRect(centerX, centerY, 2*40, 2*40, BGCOLOR);
+                  }
                   state = five;
               case five:
+                  if(corner == 0)
+                  {
+                      ST7735_DrawStringMod(leftwall, top, "5", TXTCOLOR, BGCOLOR, TXTSIZE);
+                      __delay_cycles(48000000);
+                      ST7735_FillRect(leftwall, top, 2*40, 2*40, BGCOLOR);
+                  }
+                  else if(corner == 1)
+                  {
                   ST7735_DrawStringMod(rightwall, bot, "5", TXTCOLOR, BGCOLOR, TXTSIZE);
                   __delay_cycles(48000000);
                   ST7735_FillRect(rightwall, bot, 2*40, 2*40, BGCOLOR);
+                  }
+                  else if(corner == 2)
+                  {
+                  ST7735_DrawStringMod(leftwall, bot, "5", TXTCOLOR, BGCOLOR, TXTSIZE);
+                  __delay_cycles(48000000);
+                  ST7735_FillRect(leftwall, bot, 2*40, 2*40, BGCOLOR);
+                  }
+                  else if(corner == 3)
+                  {
+                  ST7735_DrawStringMod(rightwall, top, "5", TXTCOLOR, BGCOLOR, TXTSIZE);
+                  __delay_cycles(48000000);
+                  ST7735_FillRect(rightwall, top, 2*40, 2*40, BGCOLOR);
+                  }
+                  else
+                  {
+                  ST7735_DrawStringMod(centerX, centerY, "5", TXTCOLOR, BGCOLOR, TXTSIZE);
+                  __delay_cycles(48000000);
+                  ST7735_FillRect(centerX, centerY, 2*40, 2*40, BGCOLOR);
+                  }
                   state = six;
               case six:
+                  if(corner == 0)
+                  {
+                      ST7735_DrawStringMod(leftwall, top, "6", TXTCOLOR, BGCOLOR, TXTSIZE);
+                      __delay_cycles(48000000);
+                      ST7735_FillRect(leftwall, top, 2*40, 2*40, BGCOLOR);
+                  }
+                  else if(corner == 1)
+                  {
+                  ST7735_DrawStringMod(rightwall, bot, "6", TXTCOLOR, BGCOLOR, TXTSIZE);
+                  __delay_cycles(48000000);
+                  ST7735_FillRect(rightwall, bot, 2*40, 2*40, BGCOLOR);
+                  }
+                  else if(corner == 2)
+                  {
                   ST7735_DrawStringMod(leftwall, bot, "6", TXTCOLOR, BGCOLOR, TXTSIZE);
                   __delay_cycles(48000000);
                   ST7735_FillRect(leftwall, bot, 2*40, 2*40, BGCOLOR);
+                  }
+                  else if(corner == 3)
+                  {
+                  ST7735_DrawStringMod(rightwall, top, "6", TXTCOLOR, BGCOLOR, TXTSIZE);
+                  __delay_cycles(48000000);
+                  ST7735_FillRect(rightwall, top, 2*40, 2*40, BGCOLOR);
+                  }
+                  else
+                  {
+                  ST7735_DrawStringMod(centerX, centerY, "6", TXTCOLOR, BGCOLOR, TXTSIZE);
+                  __delay_cycles(48000000);
+                  ST7735_FillRect(centerX, centerY, 2*40, 2*40, BGCOLOR);
+                  }
                   state = seven;
               case seven:
+                  if(corner == 0)
+                  {
+                      ST7735_DrawStringMod(leftwall, top, "7", TXTCOLOR, BGCOLOR, TXTSIZE);
+                      __delay_cycles(48000000);
+                      ST7735_FillRect(leftwall, top, 2*40, 2*40, BGCOLOR);
+                  }
+                  else if(corner == 1)
+                  {
+                  ST7735_DrawStringMod(rightwall, bot, "7", TXTCOLOR, BGCOLOR, TXTSIZE);
+                  __delay_cycles(48000000);
+                  ST7735_FillRect(rightwall, bot, 2*40, 2*40, BGCOLOR);
+                  }
+                  else if(corner == 2)
+                  {
+                  ST7735_DrawStringMod(leftwall, bot, "7", TXTCOLOR, BGCOLOR, TXTSIZE);
+                  __delay_cycles(48000000);
+                  ST7735_FillRect(leftwall, bot, 2*40, 2*40, BGCOLOR);
+                  }
+                  else if(corner == 3)
+                  {
                   ST7735_DrawStringMod(rightwall, top, "7", TXTCOLOR, BGCOLOR, TXTSIZE);
                   __delay_cycles(48000000);
                   ST7735_FillRect(rightwall, top, 2*40, 2*40, BGCOLOR);
+                  }
+                  else
+                  {
+                  ST7735_DrawStringMod(centerX, centerY, "7", TXTCOLOR, BGCOLOR, TXTSIZE);
+                  __delay_cycles(48000000);
+                  ST7735_FillRect(centerX, centerY, 2*40, 2*40, BGCOLOR);
+                  }
                   state = eight;
               case eight:
-                  ST7735_DrawStringMod(leftwall, top, "8", TXTCOLOR, BGCOLOR, TXTSIZE);
+                  if(corner == 0)
+                  {
+                      ST7735_DrawStringMod(leftwall, top, "8", TXTCOLOR, BGCOLOR, TXTSIZE);
+                      __delay_cycles(48000000);
+                      ST7735_FillRect(leftwall, top, 2*40, 2*40, BGCOLOR);
+                  }
+                  else if(corner == 1)
+                  {
+                  ST7735_DrawStringMod(rightwall, bot, "8", TXTCOLOR, BGCOLOR, TXTSIZE);
                   __delay_cycles(48000000);
-                  ST7735_FillRect(leftwall, top, 2*40, 2*40, BGCOLOR);
+                  ST7735_FillRect(rightwall, bot, 2*40, 2*40, BGCOLOR);
+                  }
+                  else if(corner == 2)
+                  {
+                  ST7735_DrawStringMod(leftwall, bot, "8", TXTCOLOR, BGCOLOR, TXTSIZE);
+                  __delay_cycles(48000000);
+                  ST7735_FillRect(leftwall, bot, 2*40, 2*40, BGCOLOR);
+                  }
+                  else if(corner == 3)
+                  {
+                  ST7735_DrawStringMod(rightwall, top, "8", TXTCOLOR, BGCOLOR, TXTSIZE);
+                  __delay_cycles(48000000);
+                  ST7735_FillRect(rightwall, top, 2*40, 2*40, BGCOLOR);
+                  }
+                  else
+                  {
+                  ST7735_DrawStringMod(centerX, centerY, "8", TXTCOLOR, BGCOLOR, TXTSIZE);
+                  __delay_cycles(48000000);
+                  ST7735_FillRect(centerX, centerY, 2*40, 2*40, BGCOLOR);
+                  }
                   state = nine;
               case nine:
+                  if(corner == 0)
+                  {
+                      ST7735_DrawStringMod(leftwall, top, "9", TXTCOLOR, BGCOLOR, TXTSIZE);
+                      __delay_cycles(48000000);
+                      ST7735_FillRect(leftwall, top, 2*40, 2*40, BGCOLOR);
+                  }
+                  else if(corner == 1)
+                  {
+                  ST7735_DrawStringMod(rightwall, bot, "9", TXTCOLOR, BGCOLOR, TXTSIZE);
+                  __delay_cycles(48000000);
+                  ST7735_FillRect(rightwall, bot, 2*40, 2*40, BGCOLOR);
+                  }
+                  else if(corner == 2)
+                  {
+                  ST7735_DrawStringMod(leftwall, bot, "9", TXTCOLOR, BGCOLOR, TXTSIZE);
+                  __delay_cycles(48000000);
+                  ST7735_FillRect(leftwall, bot, 2*40, 2*40, BGCOLOR);
+                  }
+                  else if(corner == 3)
+                  {
+                  ST7735_DrawStringMod(rightwall, top, "9", TXTCOLOR, BGCOLOR, TXTSIZE);
+                  __delay_cycles(48000000);
+                  ST7735_FillRect(rightwall, top, 2*40, 2*40, BGCOLOR);
+                  }
+                  else
+                  {
                   ST7735_DrawStringMod(centerX, centerY, "9", TXTCOLOR, BGCOLOR, TXTSIZE);
                   __delay_cycles(48000000*3);
                   ST7735_FillRect(centerX, centerY, 2*40, 2*40, BGCOLOR);
+                  }
                   state = zero;
+                  corner++;
+                  if(corner == 5) corner = 0;
               default:
                   state = zero;
                   break;

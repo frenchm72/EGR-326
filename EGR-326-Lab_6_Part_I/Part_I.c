@@ -25,7 +25,7 @@ Full Color LCD: SCK - P9.5 | SDA - P9.7 | LED - 3.3V | A0 - P9.2 | RST - P9.3 |
 void Clock_Init48MHz(void);
 
 #define BGCOLOR ST7735_Color565(0, 0, 0)//black
-#define TXTCOLOR ST7735_Color565(0, 255, 255) //white
+#define TXTCOLOR ST7735_Color565(0, 0, 255) //white
 #define TXTSIZE 1
 
 int main(void){
@@ -37,8 +37,10 @@ int main(void){
 
   Output_On();
   Output_Clear();
+  ST7735_FillScreen(BGCOLOR);//ST7735_FillScreen(ST7735_BLUE);
   ST7735_SetTextColor(TXTCOLOR);
-  //ST7735_DrawStringMod(2, 7, display, TXTCOLOR, BGCOLOR, 2);
+  ST7735_DrawStringMod(25, 75, display, TXTCOLOR, BGCOLOR, 2);
+  __delay_cycles(48000000*3);
   ST7735_FillScreen(BGCOLOR);//ST7735_FillScreen(ST7735_BLUE);
   while(1){
       //shifts the text
