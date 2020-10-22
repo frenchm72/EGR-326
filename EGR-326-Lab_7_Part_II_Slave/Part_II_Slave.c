@@ -8,89 +8,61 @@
   Note:
 ************************************************************************************************************
 WIRING FOR MSP432
-Push Button   : In  - P3.6
-White Stepper : IN1 - P2.3 | IN2 - P5.1 | IN3 - P3.5 | IN4 - P3.7
-Full Color LCD: SCK - P9.5 | SDA - P9.7 | LED - 3.3V | A0 - P9.2  | RST - P9.3 |
-                VCC - 3.3V | GND - GND  | CS  - P9.4
+
 ***********************************************************************************************************/
 #include "msp.h"
-#include <string.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <math.h>
-#include <stdint.h>
 
-volatile uint8_t BUT1;
-volatile int Direction;
-#define STEPSmain 10 //645 is the largest
-#define BUTPORT P3
-#define BUTPIN BIT6
+#define LED2_RED BIT0
+#define LED2_GREEN BIT1
+#define LED2_BLUE BIT2
 
-void Clock_Init48MHz(void);
+#define SLAVE_ADDRESS 0x48
 
-int main(void){
-    WDT_A->CTL = WDT_A_CTL_PW | WDT_A_CTL_HOLD;     // stop watchdog timer
+char RXData;
 
-    BUTPORT->SEL0 &= ~(BUTPIN); //setting up button as interrupt
-    BUTPORT->SEL1 &= ~(BUTPIN);
-    BUTPORT->DIR &= ~(BUTPIN);
-    BUTPORT->REN |= (BUTPIN);   //enable resistor
-    BUTPORT->OUT |= (BUTPIN);   //enable pull up
-    BUTPORT->IES |= (BUTPIN);   //set pin as interrupt
-    BUTPORT->IE |= (BUTPIN);    //enable interrupt for Px.x
-    BUTPORT->IFG &= ~(BUTPIN);  //clears interrupt flag
+void main(void){
 
-    Clock_Init48MHz();
-    SysTickInit();
-    initWhiteStepper();
-    Direction = 0;
-    BUT1 = 0;
+    WDT_A->CTL = WDT_A_CTL_PW | WDT_A_CTL_HOLD;
 
-    NVIC->ISER[1] = 1 << ((PORT3_IRQn) & 31);
-    __enable_interrupt();
+    P2->DIR = LED2_RED|LED2_GREEN|LED2_BLUE;
+    P2->OUT = 0x00;
+    P1->SEL0 |= BIT6 | BIT7;                // P1.6 and P1.7 as UCB0SDA and UCB0SCL
 
-    while(1){
-        if(BUT1){
-            Direction = !Direction;
-            step(STEPSmain, Direction);
-            BUT1 = 0;
+    EUSCI_B0->CTLW0 |= EUSCI_B_CTLW0_SWRST;      // Hold EUSCI_B0 module in reset state
+    EUSCI_B0->CTLW0 |= EUSCI_B_CTLW0_MODE_3|EUSCI_B_CTLW0_SYNC;
+    EUSCI_B0->I2COA0 = SLAVE_ADDRESS | EUSCI_B_I2COA0_OAEN;
+    EUSCI_B0->CTLW0 &= ~EUSCI_B_CTLW0_SWRST;        // Clear SWRST to resume operation
+    EUSCI_B0->IFG &= ~EUSCI_B_IFG_RXIFG0;       // Clear EUSCI_B0 RX interrupt flag
+    EUSCI_B0->IE |= EUSCI_B_IE_RXIE0;            // Enable EUSCI_B0 RX interrupt
+
+    NVIC->ISER[0] = 0x00100000;                 // EUSCI_B0 interrupt is enabled in NVIC
+    __enable_irq();                  // All interrupts are enabled
+
+    SCB->SCR |= SCB_SCR_SLEEPONEXIT_Msk;         // Sleep on exit
+    __sleep();                  // enter LPM0
+}
+
+void EUSCIB0_IRQHandler(void){
+    uint32_t status         = EUSCI_B0->IFG;         // Get EUSCI_B0 interrupt flag
+    EUSCI_B0->IFG  &=~ EUSCI_B_IFG_RXIFG0;      // Clear EUSCI_B0 RX interrupt flag
+
+    if(status & EUSCI_B_IFG_RXIFG0){             // Check if receive interrupt occurs
+           RXData = EUSCI_B0->RXBUF;         // Load current RXData value to transmit buffer
+
+        if (RXData == 'R'){
+            P2->OUT |= LED2_RED;         // Toggle P2.0 if 'R' is received
+            P2->OUT &= ~LED2_GREEN;
+            P2->OUT &= ~LED2_BLUE;
+        }
+        else if(RXData == 'G'){
+            P2->OUT |= LED2_GREEN;    // Toggle P2.1 if 'G' is received
+            P2->OUT &= ~LED2_RED;
+            P2->OUT &= ~LED2_BLUE;
+        }
+        else if(RXData == 'B'){
+            P2->OUT |= LED2_BLUE;    // Toggle P2.2 if 'B' is received
+            P2->OUT &= ~LED2_GREEN;
+            P2->OUT &= ~LED2_RED;
         }
     }
 }
-
-void PORT3_IRQHandler(void) // port 3 interrupt handler
-{
-    if((BUTPORT->IFG & BUTPIN)){
-        while(!(BUTPORT->IN & BUTPIN));
-        BUT1 = 1;
-    }
-    BUTPORT->IFG &= ~(BUTPIN);
-}
-
-void Clock_Init48MHz(void){
-    // Configure Flash wait-state to 1 for both banks 0 & 1
-       FLCTL->BANK0_RDCTL = (FLCTL->BANK0_RDCTL & ~(FLCTL_BANK0_RDCTL_WAIT_MASK)) |
-       FLCTL_BANK0_RDCTL_WAIT_1;
-       FLCTL->BANK1_RDCTL = (FLCTL->BANK0_RDCTL & ~(FLCTL_BANK0_RDCTL_WAIT_MASK)) |
-       FLCTL_BANK1_RDCTL_WAIT_1;
-
-    //Configure HFXT to use 48MHz crystal, source to MCLK & HSMCLK
-       PJ->SEL0 |= BIT2 | BIT3;                     // Configure PJ.2/3 for HFXT function
-       PJ->SEL1 &= ~(BIT2 | BIT3);
-       CS->KEY = CS_KEY_VAL ;                       // Unlock CS module for register access
-       CS->CTL2 |= CS_CTL2_HFXT_EN | CS_CTL2_HFXTFREQ_6 | CS_CTL2_HFXTDRIVE;
-          while(CS->IFG & CS_IFG_HFXTIFG)
-                    CS->CLRIFG |= CS_CLRIFG_CLR_HFXTIFG;
-
-      CS->CTL1 = CS->CTL1 & ~(CS_CTL1_SELM_MASK     |// select MCLK and HSMCLK no divider
-                              CS_CTL1_DIVM_MASK     |
-                              CS_CTL1_SELS_MASK     |
-                              CS_CTL1_DIVHS_MASK)   |
-                              CS_CTL1_SELM__HFXTCLK |
-                              CS_CTL1_SELS__HFXTCLK;
-
-      CS->CTL1 = CS->CTL1 |CS_CTL1_DIVS_2;    // change the SMCLK clock speed to 12 MHz.
-
-      CS->KEY = 0;                            // Lock CS module from unintended accesses
-}
-
