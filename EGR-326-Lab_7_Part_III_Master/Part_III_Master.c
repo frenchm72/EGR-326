@@ -10,10 +10,13 @@
 WIRING FOR MSP432
 Push Button   : In  - P1.1
 I2C           : SDA - P1.6 | SCL - P1.7 | GND - GND
+KeyPad        : ROW0 - P2.7 | ROW1 - P2.6 | ROW2 - P2.4 | ROW3 - P2.5 |
+                            | COL0 - P3.0 | COL1 - P5.6 | COL2 - P5.7 |
 ***********************************************************************************************************/
 #include "msp.h"
+#include "keypad.h"
 #include <string.h>
-#in- clude <stdio.h>
+#include <stdio.h>
 #include <stdlib.h>
 #include <math.h>
 #include <stdint.h>
@@ -23,9 +26,9 @@ I2C           : SDA - P1.6 | SCL - P1.7 | GND - GND
 uint32_t status1, status2;
 
 #define SLAVE_ADDRESS 0x48
-
-char TXData[2] = "00";
+int TXData[2];
 int i = 0;
+int keyMain;
 
 void main(void){
     WDT_A->CTL = WDT_A_CTL_PW | WDT_A_CTL_HOLD;
@@ -46,6 +49,7 @@ void main(void){
 
     KeyInit();//init keypad
     SysTickInit();
+    interON();
 
     NVIC->ISER[1] = 0x00000008;// Port P1 interrupt is enabled in NVIC
     NVIC->ISER[0] = 0x00100000;// EUSCI_B0 interrupt is enabled in NVIC
@@ -54,79 +58,46 @@ void main(void){
 
     while (EUSCI_B0->CTLW0 & EUSCI_B_CTLW0_TXSTP);
         EUSCI_B0->CTLW0 |= EUSCI_B_CTLW0_TR | EUSCI_B_CTLW0_TXSTT;
-        SCB->SCR |= SCB_SCR_SLEEPONEXIT_Msk;        // Sleep on exit
 
-        while(1){
+    while(1){
             if(keyPressed)//waits for an interrupt
                 {
                 keyMain = readKey();//reads the key
-                if(!(strcmp(decodeKey(keyMain),"*"))){
-                    printf("Please Enter:\n1 - Day Month Year\n2 - "
-                            "Hour Minute Second\n3 - Temperature\n");
-                    while(1){
-                        if(keyPressed)//waits for an interrupt
-                            {
-                            ReadRTC();
-                            keyMain = readKey();//reads the key
-                            if(!(strcmp(decodeKey(keyMain),"1")))
-                            {
-                                printf("\nThe Date is:\n%s\n%s %d%d, 2%d%d%d\n\n",
-                                       dayOfWeekDecode(readRTC.dayOfWeek),
-                                       monthDecode(readRTC.monthT *10 + readRTC.monthO),
-                                       readRTC.dayT, readRTC.dayO,
-                                       readRTC.yearC, readRTC.yearD, readRTC.yearO);
-
-                                printf("\nPlease Press '*' to Enter the Sub Menu\n\n");
-                                break;
-
-                            }
-                            else if(!(strcmp(decodeKey(keyMain),"2")))
-                            {
-                                printf("\nTime:\n%d%d:%d%d:%d%d %s\n", readRTC.hourT, readRTC.hourO,
-                                   readRTC.minT, readRTC.minO,
-                                   readRTC.secT, readRTC.secO, (readRTC.PMAM ? "PM" : "AM"));
-
-                                printf("\nPlease Press '*' to Enter the Sub Menu\n\n");
-                                break;
-
-                            }
-                            else if(!(strcmp(decodeKey(keyMain),"3")))
-                            {
-                                printf("\nTempature:\n%d%cC\n", readRTC.temp, 176);
-                                printf("\nPlease Press '*' to Enter the Sub Menu\n\n");
-                                break;
-
-                            }
-                            }
-                        }
+                keyMain = decodeKey(keyMain);
+                if((keyMain != 10) && (keyMain != 11) && (keyMain != 12)){
+                    i = !i;
+                    TXData[i] = keyMain;
+                    printf("\nYour Step:%d%d\n", TXData[1], TXData[0]);
                     }
         }
     }
-
-}
+    }
 
 void EUSCIB0_IRQHandler(void){//like previous set up just with different pins and adding interrupts
-    status1 = EUSCI_B0->IFG;
-    status2 = EUSCI_B0->IFG;
     EUSCI_B0->IFG &=~ EUSCI_B_IFG_TXIFG0;
-    if(status1 & EUSCI_B_IFG_TXIFG0){//send pos value
-        EUSCI_B0->TXBUF = "+";
-        EUSCI_B0->TXBUF = TXData[0];
-        EUSCI_B0->TXBUF = TXData[1];
-        EUSCI_B0->IE &= ~EUSCI_B_IE_TXIE0;}
-    if(status1 & EUSCI_B_IFG_TXIFG0){//send neg value
-        EUSCI_B0->TXBUF = "-";
-        EUSCI_B0->TXBUF = TXData[0];
-        EUSCI_B0->TXBUF = TXData[1];
-        EUSCI_B0->IE &= ~EUSCI_B_IE_TXIE0;}
+    if(status1 && EUSCI_B_IFG_TXIFG0){//send pos value
+        EUSCI_B0->TXBUF = 0x2B;
+        while(!(EUSCI_B0->IFG & 2));
+        EUSCI_B0->TXBUF = TXData[1]+48;
+        while(!(EUSCI_B0->IFG & 2));
+        EUSCI_B0->TXBUF = TXData[0]+48;
+        EUSCI_B0->IE &= ~EUSCI_B_IE_TXIE0;
+        status1 = 0;}
+    if(status2 && EUSCI_B_IFG_TXIFG0){//send neg value
+        EUSCI_B0->TXBUF = 0x2D;
+        while(!(EUSCI_B0->IFG & 2));
+        EUSCI_B0->TXBUF = TXData[1]+48;
+        while(!(EUSCI_B0->IFG & 2));
+        EUSCI_B0->TXBUF = TXData[0]+48;
+        EUSCI_B0->IE &= ~EUSCI_B_IE_TXIE0;
+        status2 = 0;}
 }
 
 void PORT1_IRQHandler(void){//push button interrupt
-    status1 = P1->IFG;
-    status2 = P1->IFG;
+    status1 = P1->IFG & S1;
+    status2 = P1->IFG & S2;
     P1->IFG &= ~S1;
     P1->IFG &= ~S2;
-    if(status1 & S1) EUSCI_B0->IE |= EUSCI_B_IE_TXIE0;   // Enable EUSCI_A0 TX interrupt
-    if(status2 & S2) EUSCI_B0->IE |= EUSCI_B_IE_TXIE0;   // Enable EUSCI_A0 TX interrupt
+    if((status1 & S1) | (status2 & S2)) EUSCI_B0->IE |= EUSCI_B_IE_TXIE0;   // Enable EUSCI_A0 TX interrupt
 }
 

@@ -31,7 +31,7 @@ uint16_t readKey(void);
 uint8_t readRow(void);
 void interON(void);//turns on col
 void interOFF(void);//turns off col
-char* decodeKey(int val);//decodes press
+int decodeKey(int val);//decodes press
 
 void SysTickInit(void);
 void delay_ms(int ms);//delay in milliseconds using systick

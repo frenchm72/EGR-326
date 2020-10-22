@@ -120,34 +120,34 @@ void interOFF(void)
     COL2_OFF;
 }
 
-char* decodeKey(int val) // decodes key val
+int decodeKey(int val) // decodes key val
 {
     if(val == 1)//represent 1
-    return "1";
+    return 1;
     else if(val == 16)//represent 2
-        return "2";
+        return 2;
     else if(val == 256)//represent 3
-        return "3";
+        return 3;
     else if(val == 2)//represent 4
-        return "4";
+        return 4;
     else if(val == 32)// represent 5
-        return "5";
+        return 5;
     else if(val == 512)//represent 6
-        return "6";
+        return 6;
     else if(val == 4)//represent 7
-            return "7";
+            return 7;
     else if(val == 64)//represent 8
-            return "8";
+            return 8;
     else if(val == 1024)//represent 9
-            return "9";
+            return 9;
     else if(val == 8)//represent *
-            return "*";
+            return 10;
     else if(val == 128)//represent 0
-            return "0";
+            return 0;
     else if(val == 2048)//represent #
-            return "#";
+            return 11;
     else
-            return "X";
+            return 12;
 }
 
 void SysTickInit(void)
