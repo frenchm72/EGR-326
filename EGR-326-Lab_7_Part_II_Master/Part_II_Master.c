@@ -23,7 +23,9 @@ I2C           : SDA - P1.6 | SCL - P1.7 | GND - GND
 #define SLAVE_ADDRESS 0x48
 
 char TXData[10] = "RGBRGBRGBG";
+char TXSel[1] = "B";
 int i = 0;
+int keyMain;
 
 void main(void){
     WDT_A->CTL = WDT_A_CTL_PW | WDT_A_CTL_HOLD;
@@ -48,15 +50,22 @@ void main(void){
 
     while (EUSCI_B0->CTLW0 & EUSCI_B_CTLW0_TXSTP);
         EUSCI_B0->CTLW0 |= EUSCI_B_CTLW0_TR | EUSCI_B_CTLW0_TXSTT;
-        SCB->SCR |= SCB_SCR_SLEEPONEXIT_Msk;        // Sleep on exit
-        __sleep();                   // enter LPM0
+//        SCB->SCR |= SCB_SCR_SLEEPONEXIT_Msk;        // Sleep on exit
+//        __sleep();                   // enter LPM0
+        while(1){
+                printf("\nColor:");
+                scanf("%c", &TXSel);
+                EUSCI_B0->IE |= EUSCI_B_IE_TXIE0;   // Enable EUSCI_A0 TX interrupt
+
+        }
 }
 
 void EUSCIB0_IRQHandler(void){//like previous set up just with different pins and adding interrupts
     uint32_t status = EUSCI_B0->IFG;
     EUSCI_B0->IFG &=~ EUSCI_B_IFG_TXIFG0;
     if(status & EUSCI_B_IFG_TXIFG0){
-        EUSCI_B0->TXBUF = TXData[i++%10];
+//        EUSCI_B0->TXBUF = TXData[i++%10];
+        EUSCI_B0->TXBUF = TXSel[0];
         EUSCI_B0->IE &= ~EUSCI_B_IE_TXIE0;}
 }
 
