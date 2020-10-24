@@ -19,7 +19,7 @@ I2C           : SDA - P1.6 | SCL - P1.7 | GND - GND
 #include <math.h>
 #include <stdint.h>
 
-#define S1 BIT1
+#define S1 BIT4
 #define SLAVE_ADDRESS 0x48
 
 char TXData[10] = "RGBRGBRGBG";
@@ -64,8 +64,13 @@ void EUSCIB0_IRQHandler(void){//like previous set up just with different pins an
     uint32_t status = EUSCI_B0->IFG;
     EUSCI_B0->IFG &=~ EUSCI_B_IFG_TXIFG0;
     if(status & EUSCI_B_IFG_TXIFG0){
+<<<<<<< Upstream, based on branch 'master' of https://github.com/frenchm72/EGR-326.git
 //        EUSCI_B0->TXBUF = TXData[i++%10];
         EUSCI_B0->TXBUF = TXSel[0];
+=======
+        EUSCI_B0->TXBUF = TXData[i++%10];
+        //while(!(EUSCI_B0->IFG & 2));
+>>>>>>> 1ccbe17 update
         EUSCI_B0->IE &= ~EUSCI_B_IE_TXIE0;}
 }
 
