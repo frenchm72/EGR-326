@@ -23,12 +23,6 @@ void main(void){
     WDT_A->CTL = WDT_A_CTL_PW
                                 | WDT_A_CTL_HOLD;
 
-    CSPORT->SEL0 &= ~CSPIN;
-    CSPORT->SEL1 &= ~CSPIN;
-    CSPORT->DIR |= CSPIN;
-    CSPORT->REN |= CSPIN;
-    CSPORT->OUT &= ~CSPIN;
-
     initSPI();
     SysTickInit();
 
