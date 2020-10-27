@@ -1,14 +1,14 @@
 /***********************************************************************************************************
-  Title:        EGR 326 Lab 8
-  Filename:     main.c
-  Author(s):    Mathew J. Yerian-French, Luke Metz
-  Date:         10/23/2020
-  Instructor:   Professor Brian Krug
-  Description:  Lab 8
-  Note:
+    Title:                EGR 326 Lab 8
+    Filename:       main.c
+    Author(s):      Mathew J. Yerian-French, Luke Metz
+    Date:               10/23/2020
+    Instructor:     Professor Brian Krug
+    Description:   Lab 8 -
+    Note:
 ************************************************************************************************************
-WIRING FOR MSP432
-Push Button   : In  - P1.1
+WIRING FOR MSP432:
+7-Segment 8-Digit   : DIN - PX.X    |   CLK - PX.X  |   CS - PX.X   |   Vcc - 3.3V  |   GND - GND|
 ***********************************************************************************************************/
 #include "msp.h"
 #include <7SegSPI.h>
