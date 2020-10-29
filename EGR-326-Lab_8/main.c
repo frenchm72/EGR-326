@@ -4,11 +4,12 @@
     Author(s):      Mathew J. Yerian-French
     Date:               10/23/2020
     Instructor:     Professor Brian Krug
-    Description:   Lab 8 - interfacig the 8 digit, 7 segment display with the MSP432
+    Description:   Lab 8 - interfacing the 8 digit, 7 segment display with the MSP432
     Note:               Most code was complied using the LCD code and editing register that needed be.
 ************************************************************************************************************
 WIRING FOR MSP432:
-7-Segment 8-Digit   : DIN - PX.X    |   CLK - PX.X  |   CS - PX.X   |   Vcc - 3.3V  |   GND - GND|
+7-Segment 8-Digit       :   DIN - P1.6    |   CLK - P1.5  |   CS - P5.0   |   Vcc - 3.3V  |   GND - GND|
+Button                            :  GND -GND   |   PIN - P5.2   |
 ***********************************************************************************************************/
 #include "msp.h"
 #include <7SegSPI.h>
