@@ -66,7 +66,7 @@ void main(void){
             while(!(BUTPORT -> IN & BUTPIN));
             bFlag = false;
             tFlag = !tFlag;
-            if(!tFlag){
+//            if(!tFlag){
                 digC1++;
                 if (digC1 >9){
                     digC1 = 0;
@@ -87,7 +87,7 @@ void main(void){
                 sendSPI(DIGIT_1, digC2);
                 sendSPI(DIGIT_2, digC3);
                 sendSPI(DIGIT_3, digC4);
-            }
+ //           }
             }
         else  if(tFlag && (count >= 500)){
             digT1++;
@@ -105,6 +105,7 @@ void main(void){
             sendSPI(DIGIT_7, digT4);
             if(digT3>=1){
                 digT3 = 0;
+                digT1 = 0;
             }
             count = 0;
         }

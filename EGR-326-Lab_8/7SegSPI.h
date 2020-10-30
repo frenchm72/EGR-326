@@ -13,7 +13,7 @@
 #define DECODE 0x09 // procedure descriptions given by professor Krug
 #define DECODE_MODE 0xFF //decode setting
 #define INTENSITY 0x0A //intensity address
-#define INTENSITY_MODE 0x03 //intensity setting
+#define INTENSITY_MODE 0x0F //intensity setting
 #define SCAN_LIMIT 0x0B // scan address
 #define SCAN_LIMIT_MODE 0x07 //scan setting
 #define SHUTDOWN 0x0C //shutdown address
