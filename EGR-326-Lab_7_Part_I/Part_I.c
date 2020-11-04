@@ -25,8 +25,8 @@ Full Color LCD: SCK - P9.5 | SDA - P9.7 | LED - 3.3V | A0 - P9.2  | RST - P9.3 |
 volatile uint8_t BUT1;
 volatile int Direction;
 #define STEPSmain 10 //645 is the largest
-#define BUTPORT P3
-#define BUTPIN BIT6
+#define BUTPORT P1
+#define BUTPIN BIT1
 
 void Clock_Init48MHz(void);
 
@@ -48,7 +48,7 @@ int main(void){
     Direction = 0;
     BUT1 = 0;
 
-    NVIC->ISER[1] = 1 << ((PORT3_IRQn) & 31);
+    NVIC->ISER[1] = 1 << ((PORT1_IRQn) & 31);
     __enable_interrupt();
 
     while(1){
@@ -60,7 +60,7 @@ int main(void){
     }
 }
 
-void PORT3_IRQHandler(void) // port 3 interrupt handler
+void PORT1_IRQHandler(void) // port 3 interrupt handler
 {
     if((BUTPORT->IFG & BUTPIN)){
         while(!(BUTPORT->IN & BUTPIN));
