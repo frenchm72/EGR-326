@@ -31,8 +31,8 @@ Header files included:
 void Clock_Init48MHz(void);
 #define CLEARX 128
 #define CLEARY 40
-#define STATUSX 10
-#define STATUSY 25
+#define STATUSX 30
+#define STATUSY 80
 
 #define HALLPORT P6 //Timer_A2.4
 #define HALLPIN BIT6
@@ -67,10 +67,10 @@ void main(void)
 	 NVIC->ISER[1] = 1 << ((PORT6_IRQn) & 31);
 	    __enable_interrupt();
 
-	   // delay_ms(3000);
+	    delay_ms(3000);
 	    ST7735_FillScreen(BGCOLOR);
 	    ST7735_SetTextColor(TXTCOLOR);
-        ST7735_DrawStringMod(STATUSX, STATUSX, "Door", TXTCOLOR, BGCOLOR,  TXTSIZE);
+        ST7735_DrawStringMod(STATUSX, STATUSY-25, "Door", TXTCOLOR, BGCOLOR,  TXTSIZE);
 
 	    while(1){
 	        if(Sense){
