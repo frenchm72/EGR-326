@@ -31,50 +31,82 @@ Header files included:
 void Clock_Init48MHz(void);
 #define CLEARX 128
 #define CLEARY 40
-#define STATUSX 10
-#define STATUSY 25
+#define STATUSX 30
+#define STATUSY 80
 
-#define HALLPORT P6 //Timer_A2.4
+#define HALLPORT P6 //Timer_A2.3
 #define HALLPIN BIT6
 
-bool Sense = false;
-bool OCdirect;
-
+bool count = false;
+float r1, r2, pulseWidth = 50;
 void SysTickInit(void);
 void delay_ms(int ms);//delay in milliseconds using systick
+void delay_us(int us);//delay in microeconds using systick
+void initMSP(void);
+void itoa(int n, char s[]);
+void reverse(char s[]);
 
 void main(void)
 {
     WDT_A->CTL = WDT_A_CTL_PW | WDT_A_CTL_HOLD;     // stop watchdog timer
 
+    char speed[3] = {48, 48, 48};
+
     Clock_Init48MHz();                   // set system clock to 48 MHz
     ST7735_InitR(INITR_GREENTAB);
     Output_On();
     SysTickInit();
+    initMSP();
 
     ST7735_SetRotation(0);
     ST7735_DrawBitmap(0, 160, gvlogo, 128, 160);
 
-    HALLPORT->SEL0 &= ~(HALLPIN); //setting up button as interrupt
-    HALLPORT->SEL1 &= ~(HALLPIN);
-    HALLPORT->DIR &= ~(HALLPIN);
-    HALLPORT->REN |= (HALLPIN);   //enable resistor
-    HALLPORT->OUT |= (HALLPIN);   //enable pull up
-    HALLPORT->IES |= (HALLPIN);   //set pin as interrupt high to low
-    HALLPORT->IE |= (HALLPIN);    //enable interrupt for Px.x
-    HALLPORT->IFG &= ~(HALLPIN);  //clears interrupt flag
-
-     NVIC->ISER[1] = 1 << ((PORT6_IRQn) & 31);
-        __enable_interrupt();
-
-        delay_ms(3000);
-        ST7735_FillScreen(BGCOLOR);
-        ST7735_SetTextColor(TXTCOLOR);
-        ST7735_DrawStringMod(STATUSX, STATUSX, "Speed", TXTCOLOR, BGCOLOR,  TXTSIZE);
+    //delay_ms(3000);
+    ST7735_FillScreen(BGCOLOR);
+    ST7735_SetTextColor(TXTCOLOR);
+    ST7735_DrawStringMod(STATUSX, STATUSY-(TXTSIZE*10)+5, "Speed", TXTCOLOR, BGCOLOR,  TXTSIZE);
 
         while(1){
-
+            itoa(pulseWidth, speed);
+            ST7735_FillRect(STATUSX, STATUSY, CLEARX, CLEARY, BGCOLOR);
+            ST7735_DrawStringMod(STATUSX, STATUSY, speed, TXTCOLOR, BGCOLOR,  TXTSIZE);
+            delay_ms(100);
+            //ST7735_DrawStringMod(STATUSX, STATUSY, , TXTCOLOR, BGCOLOR,  TXTSIZE);
         }
+}
+
+void initMSP(void){
+      HALLPORT->SEL0 |= (HALLPIN); //TA2.CCI2A input capture pin, second function
+      HALLPORT->SEL1 &= ~(HALLPIN);//TA2.CCI2A input capture pin, second function
+      HALLPORT->DIR &= ~(HALLPIN);
+
+          TIMER_A2->CTL |=TIMER_A_CTL_TASSEL_1 | // Use AMCLK as clock source,
+                                              TIMER_A_CTL_ID_3 | //divide by 8
+                                              TIMER_A_CTL_MC_1    | // Start timer in UP mode
+                                              TIMER_A_CTL_CLR;       // clear
+
+          TIMER_A2->CCTL[3] =TIMER_A_CCTLN_CM_1    | // Capture rising edge,
+                                                     TIMER_A_CCTLN_CCIS_0  | // Use CCI2A
+                                                     TIMER_A_CCTLN_CCIE    | // Enable capture interrupt
+                                                     TIMER_A_CCTLN_CAP     | // Enable capture mode,
+                                                     TIMER_A_CCTLN_SCS;      // Synchronous capture
+
+          NVIC->ISER[0] = 1 << ((TA2_N_IRQn) & 31); // Enable interrupt in NVIC vector
+            __enable_irq ( );//enable global interrupt
+}
+
+void TA2_N_IRQHandler(void)
+{
+    if(count){
+        r2 = TIMER_A2->CCR[3]; // Get current count
+        count = false;
+        pulseWidth = r2 - r1;
+    }
+    else{
+        count = true;
+        r1 = TIMER_A2->CCR[3]; // Get current count
+    }
+    TIMER_A2->CCTL[3] &= ~(TIMER_A_CCTLN_CCIFG);    // Clear the interrupt flag
 }
 
 void Clock_Init48MHz(void){
@@ -131,4 +163,53 @@ else{
     SysTick->VAL = 0;
     while((SysTick->CTRL & BIT(16))==0);
 }
+}
+
+void delay_us(int us)//delay in microeconds using systick
+{//will roll over at 349ms
+if(us <= 349000){
+SysTick->LOAD =(48000*us)-1;
+SysTick->VAL = 0;
+while((SysTick->CTRL & BIT(16))==0);
+}
+else{
+    do{
+        SysTick->LOAD =(48000*345)-1;
+        SysTick->VAL = 0;
+        while((SysTick->CTRL & BIT(16))==0);
+        us = us - 349000;
+    }while(us > 349000);
+    SysTick->LOAD =(48000*us)-1;
+    SysTick->VAL = 0;
+    while((SysTick->CTRL & BIT(16))==0);
+}
+}
+
+/* itoa:  convert n to characters in s */
+void itoa(int n, char s[])
+{
+    int i, sign;
+
+    if ((sign = n) < 0)  /* record sign */
+        n = -n;          /* make n positive */
+    i = 0;
+    do {       /* generate digits in reverse order */
+        s[i++] = n % 10 + '0';   /* get next digit */
+    } while ((n /= 10) > 0);     /* delete it */
+    if (sign < 0)
+        s[i++] = '-';
+    s[i] = '\0';
+    reverse(s);
+}
+/* A utility function to reverse a string  */
+void reverse(char s[])
+{
+    int i, j;
+    char c;
+
+    for (i = 0, j = strlen(s)-1; i<j; i++, j--) {
+        c = s[i];
+        s[i] = s[j];
+        s[j] = c;
+    }
 }
