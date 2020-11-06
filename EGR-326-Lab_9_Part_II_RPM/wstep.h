@@ -7,14 +7,14 @@
 #include <math.h>
 #include <string.h>
 
-#define IN1PORT P2
-#define IN1PIN BIT3
-#define IN2PORT P5
-#define IN2PIN BIT1
-#define IN3PORT P3
-#define IN3PIN BIT5
-#define IN4PORT P3
-#define IN4PIN BIT7
+#define IN1PORT P6
+#define IN1PIN BIT4
+#define IN2PORT P6
+#define IN2PIN BIT5
+#define IN3PORT P4
+#define IN3PIN BIT6
+#define IN4PORT P1
+#define IN4PIN BIT5
 
 #define SPEED 10
 
