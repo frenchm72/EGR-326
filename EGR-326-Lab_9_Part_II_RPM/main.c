@@ -29,7 +29,7 @@ Header files included:
 #include <math.h>
 #include <stdint.h>
 /**********************************************************************************************************/
-#define CLEARX 100
+#define CLEARX 160
 #define CLEARY 25
 #define STATUSX 30
 #define STATUSY 80
@@ -50,7 +50,7 @@ void main(void)
     WDT_A->CTL = WDT_A_CTL_PW | WDT_A_CTL_HOLD;     // stop watchdog timer
     Clock_Init48MHz();
 
-    char speed[3], rpm[10];
+    char speed[10], rpm[10];
     int rpmP, SpeedP;
 
     initMSP();                   // set system clock to 48 MHz
@@ -74,10 +74,10 @@ void main(void)
             SpeedP = ((((rpmP*60)*37.699)/5280)+SpeedP)/2;// calc speed
             itoa(SpeedP, speed);
             itoa(rpmP, rpm);
-            ST7735_FillRect(STATUSX+15, STATUSY-STATUSY+25, CLEARX, CLEARY, BGCOLOR);
-            ST7735_DrawStringMod(STATUSX+15, STATUSY-STATUSY+25, rpm, TXTCOLOR, BGCOLOR,  TXTSIZE);
-            ST7735_FillRect(STATUSX, STATUSY, CLEARX, CLEARY, BGCOLOR);
-            ST7735_DrawStringMod(STATUSX, STATUSY, speed, TXTCOLOR, BGCOLOR,  TXTSIZE);
+           ST7735_FillRect(STATUSX+15, STATUSY-STATUSY+25, CLEARX, CLEARY, BGCOLOR);
+           ST7735_DrawStringMod(STATUSX+15, STATUSY-STATUSY+25, rpm, TXTCOLOR, BGCOLOR,  TXTSIZE);
+           ST7735_FillRect(STATUSX+20, STATUSY, CLEARX, CLEARY, BGCOLOR);
+            ST7735_DrawStringMod(STATUSX+20, STATUSY, speed, TXTCOLOR, BGCOLOR,  TXTSIZE);
             print = false;
             }
         }
