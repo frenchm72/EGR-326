@@ -97,6 +97,7 @@ void initMSP(void){
 
 void TA2_N_IRQHandler(void)
 {
+    if(TIMER_A2->CCTL[3] & (TIMER_A_CCTLN_CCIFG)){
     if(count){
         pulseWidth = TIMER_A2->CCR[3]; // Get current count
         count = false;
@@ -105,6 +106,7 @@ void TA2_N_IRQHandler(void)
     else{
         TIMER_A2->CTL |= TIMER_A_CTL_CLR;
         count = true;
+    }
     }
     TIMER_A2->CCTL[3] &= ~(TIMER_A_CCTLN_CCIFG);    // Clear the interrupt flag
 }
