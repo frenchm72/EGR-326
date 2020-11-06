@@ -20,6 +20,7 @@ Header files included:
 ***********************************************************************************************************/
 #include "msp.h"
 #include "image.h"
+#include "wstep.h"
 #include <ST7735.h>
 #include <string.h>
 #include <stdio.h>
@@ -28,7 +29,6 @@ Header files included:
 #include <math.h>
 #include <stdint.h>
 /**********************************************************************************************************/
-void Clock_Init48MHz(void);
 #define CLEARX 128
 #define CLEARY 40
 #define STATUSX 30
@@ -37,41 +37,46 @@ void Clock_Init48MHz(void);
 #define HALLPORT P6 //Timer_A2.3
 #define HALLPIN BIT6
 
-bool count = false;
-float r1, r2, pulseWidth = 50;
-void SysTickInit(void);
-void delay_ms(int ms);//delay in milliseconds using systick
-void delay_us(int us);//delay in microeconds using systick
+bool count = false, print = true;
+uint16_t pulseWidth;
+
 void initMSP(void);
 void itoa(int n, char s[]);
 void reverse(char s[]);
+void Clock_Init48MHz(void);
 
 void main(void)
 {
     WDT_A->CTL = WDT_A_CTL_PW | WDT_A_CTL_HOLD;     // stop watchdog timer
+    Clock_Init48MHz();
 
-    char speed[3] = {48, 48, 48};
+    char speed[3], rpm[10];
 
-    Clock_Init48MHz();                   // set system clock to 48 MHz
+    initMSP();                   // set system clock to 48 MHz
+    SysTickInit();
+    initWhiteStepper(); //Stepper motor initialize
+
     ST7735_InitR(INITR_GREENTAB);
     Output_On();
-    SysTickInit();
-    initMSP();
-
     ST7735_SetRotation(0);
     ST7735_DrawBitmap(0, 160, gvlogo, 128, 160);
 
     //delay_ms(3000);
     ST7735_FillScreen(BGCOLOR);
     ST7735_SetTextColor(TXTCOLOR);
-    ST7735_DrawStringMod(STATUSX, STATUSY-(TXTSIZE*10)+5, "Speed", TXTCOLOR, BGCOLOR,  TXTSIZE);
-
+    ST7735_DrawStringMod(STATUSX, STATUSY-(TXTSIZE*10), "Speed", TXTCOLOR, BGCOLOR,  TXTSIZE);
+    ST7735_DrawStringMod(STATUSX+15, STATUSY-STATUSY+5, "RPM", TXTCOLOR, BGCOLOR,  TXTSIZE);
         while(1){
+            step(1, 1);
+            if(print){
             itoa(pulseWidth, speed);
+            itoa(pulseWidth, rpm);
             ST7735_FillRect(STATUSX, STATUSY, CLEARX, CLEARY, BGCOLOR);
             ST7735_DrawStringMod(STATUSX, STATUSY, speed, TXTCOLOR, BGCOLOR,  TXTSIZE);
-            delay_ms(100);
-            //ST7735_DrawStringMod(STATUSX, STATUSY, , TXTCOLOR, BGCOLOR,  TXTSIZE);
+            ST7735_FillRect(STATUSX+15, STATUSY-STATUSY+25, CLEARX, CLEARY, BGCOLOR);
+            ST7735_DrawStringMod(STATUSX+15, STATUSY-STATUSY+25, rpm, TXTCOLOR, BGCOLOR,  TXTSIZE);
+            print = false;
+            }
         }
 }
 
@@ -80,16 +85,18 @@ void initMSP(void){
       HALLPORT->SEL1 &= ~(HALLPIN);//TA2.CCI2A input capture pin, second function
       HALLPORT->DIR &= ~(HALLPIN);
 
-          TIMER_A2->CTL |=TIMER_A_CTL_TASSEL_1 | // Use AMCLK as clock source,
-                                              TIMER_A_CTL_ID_3 | //divide by 8
-                                              TIMER_A_CTL_MC_1    | // Start timer in UP mode
-                                              TIMER_A_CTL_CLR;       // clear
-
-          TIMER_A2->CCTL[3] =TIMER_A_CCTLN_CM_1    | // Capture rising edge,
-                                                     TIMER_A_CCTLN_CCIS_0  | // Use CCI2A
-                                                     TIMER_A_CCTLN_CCIE    | // Enable capture interrupt
-                                                     TIMER_A_CCTLN_CAP     | // Enable capture mode,
-                                                     TIMER_A_CCTLN_SCS;      // Synchronous capture
+//          TIMER_A2->CTL |=TIMER_A_CTL_TASSEL_1 | // Use AMCLK as clock source,
+//                                              TIMER_A_CTL_ID_3 | //divide by 8
+//                                              TIMER_A_CTL_MC_1    | // Start timer in UP mode
+//                                              TIMER_A_CTL_CLR;       // clear
+          TIMER_A2->CTL |= 0b0000000111100010;
+         // TIMER_A2->CCR[0] = 0xFFFF;//max load
+          TIMER_A2->CCTL[3] = 0b0100100100010000;
+//          TIMER_A2->CCTL[3] =TIMER_A_CCTLN_CM_1    | // Capture rising edge,
+//                                                     TIMER_A_CCTLN_CCIS_0  | // Use CCI2A
+//                                                     TIMER_A_CCTLN_CCIE    | // Enable capture interrupt
+//                                                     TIMER_A_CCTLN_CAP     | // Enable capture mode,
+//                                                     TIMER_A_CCTLN_SCS;      // Synchronous capture
 
           NVIC->ISER[0] = 1 << ((TA2_N_IRQn) & 31); // Enable interrupt in NVIC vector
             __enable_irq ( );//enable global interrupt
@@ -97,14 +104,16 @@ void initMSP(void){
 
 void TA2_N_IRQHandler(void)
 {
+    if(TIMER_A2->CCTL[3] & (TIMER_A_CCTLN_CCIFG)){
     if(count){
-        r2 = TIMER_A2->CCR[3]; // Get current count
+        pulseWidth = TIMER_A2->CCR[3]; // Get current count
         count = false;
-        pulseWidth = r2 - r1;
+        print = true;
     }
     else{
+        TIMER_A2->CTL |= TIMER_A_CTL_CLR;
         count = true;
-        r1 = TIMER_A2->CCR[3]; // Get current count
+    }
     }
     TIMER_A2->CCTL[3] &= ~(TIMER_A_CCTLN_CCIFG);    // Clear the interrupt flag
 }
@@ -135,54 +144,6 @@ void Clock_Init48MHz(void){
       CS->CTL1 = CS->CTL1 |CS_CTL1_DIVS_2;    // change the SMCLK clock speed to 12 MHz.
 
       CS->KEY = 0;                            // Lock CS module from unintended accesses
-}
-
-void SysTickInit(void)
-{
-SysTick -> CTRL = 0;//disable systick during setup
-SysTick -> LOAD = 0x00FFFFFF;//max reload value
-SysTick -> VAL = 0;//clears it
-SysTick -> CTRL = 0x00000005;//enables systick 48MHz no interrupts
-}
-
-void delay_ms(int ms)//delay in milliseconds using systick
-{//will roll over at 349ms
-if(ms <= 349){
-SysTick->LOAD =(48000*ms)-1;
-SysTick->VAL = 0;
-while((SysTick->CTRL & BIT(16))==0);
-}
-else{
-    do{
-        SysTick->LOAD =(48000*345)-1;
-        SysTick->VAL = 0;
-        while((SysTick->CTRL & BIT(16))==0);
-        ms = ms - 349;
-    }while(ms > 349);
-    SysTick->LOAD =(48000*ms)-1;
-    SysTick->VAL = 0;
-    while((SysTick->CTRL & BIT(16))==0);
-}
-}
-
-void delay_us(int us)//delay in microeconds using systick
-{//will roll over at 349ms
-if(us <= 349000){
-SysTick->LOAD =(48000*us)-1;
-SysTick->VAL = 0;
-while((SysTick->CTRL & BIT(16))==0);
-}
-else{
-    do{
-        SysTick->LOAD =(48000*345)-1;
-        SysTick->VAL = 0;
-        while((SysTick->CTRL & BIT(16))==0);
-        us = us - 349000;
-    }while(us > 349000);
-    SysTick->LOAD =(48000*us)-1;
-    SysTick->VAL = 0;
-    while((SysTick->CTRL & BIT(16))==0);
-}
 }
 
 /* itoa:  convert n to characters in s */
