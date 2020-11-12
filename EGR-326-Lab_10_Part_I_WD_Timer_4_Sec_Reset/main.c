@@ -45,29 +45,27 @@ void SysTickInit(void);
 void delay_ms(int ms);//delay in milliseconds using systick
 void delay_us(int us);//delay in microeconds using systick
 
-void main(void)
-{
-    WDT_A->CTL = WDT_A_CTL_PW | WDT_A_CTL_HOLD;     // stop watchdog timer
+void main(void){
+    WDT_A->CTL = WDT_A_CTL_PW          |
+                 WDT_A_CTL_SSEL__SMCLK |        // SMCLK as clock source
+                 WDT_A_CTL_TMSEL       |        // Interval timer mode
+                 WDT_A_CTL_CNTCL       |        // Clear WDT counter (initial value = 0)
+                 WDT_A_CTL_IS_4;                // Watchdog interval = 32K = 2^15 ticks
 
     char countS[2];
 
     initMSP();
 
         while(1){
-                if(timeout){
-                    time++;
-                    if(time ==20){
                     count++;
                     itoa(count, countS);
                     ST7735_DrawStringMod(STATUSX, STATUSY, countS, TXTCOLOR, BGCOLOR,  TXTSIZE);
-                    if(count == 4)
-                        count = 0;//resetWD
+//                    if(count == 4)
+//                        count = 0;//resetWD
                     time = 0;
-                    }
-                    timeout = false;
-            }
-        }
-}
+                    delay_ms(1000);
+                }
+    }
 
 void initMSP(void){
         LEDPORT->SEL0 &= ~(LEDPIN);                  //setting up LED
@@ -78,28 +76,23 @@ void initMSP(void){
         Clock_Init48MHz();
         SysTickInit();
 
-        ST7735_InitR(INITR_GREENTAB);
-        Output_On();
-        ST7735_SetRotation(0);
-        ST7735_DrawBitmap(0, 160, gvlogo, 128, 160);
+//        Output_On();
+//        ST7735_SetRotation(0);
+//        ST7735_DrawBitmap(0, 160, gvlogo, 128, 160);
         LEDPORT->OUT |= (LEDPIN); //turns ledsoff
         delay_ms(500);
         LEDPORT->OUT &= ~(LEDPIN); //turns ledsoff
-        delay_ms(2500);
+        //delay_ms(2500);
+        ST7735_InitR(INITR_GREENTAB);
         ST7735_FillScreen(BGCOLOR);
         ST7735_SetTextColor(TXTCOLOR);
         ST7735_DrawStringMod(STATUSX, STATUSY-(TXTSIZE*10), "Count", TXTCOLOR, BGCOLOR,  TXTSIZE);
-
-        WDT_A->CTL = WDT_A_CTL_PW |//passwd
-                                     WDT_A_CTL_CNTCL|//clear timer counter
-                                     WDT_A_CTL_SSEL_1|//ACLK
-                                     WDT_A_CTL_TMSEL|//timer mode
-                                     WDT_A_CTL_IS_4|
-                                     ~WDT_A_CTL_HOLD;
-
-
+        NVIC->ISER[0] = 1 << ((WDT_A_IRQn) & 31);
+            __enable_irq();                             // Enable global interrupt
 }
-
+void WDT_A_IRQHandler(void){
+    timeout = true;
+}
 void Clock_Init48MHz(void){
     // Configure Flash wait-state to 1 for both banks 0 & 1
        FLCTL->BANK0_RDCTL = (FLCTL->BANK0_RDCTL & ~(FLCTL_BANK0_RDCTL_WAIT_MASK)) |
@@ -129,17 +122,10 @@ void Clock_Init48MHz(void){
 }
 
 void SysTickInit(void){
-//SysTick -> CTRL = 0;//disable systick during setup
-//SysTick -> LOAD = 0x00FFFFFF;//max reload value
-//SysTick -> VAL = 0;//clears it
-//SysTick -> CTRL = 0x00000005;//enables systick 48MHz no interrupts
-SysTick -> CTRL = 0;//disable systick during step
-SysTick -> LOAD = 48000 - 1;//1/100 sec reload value due to max reload
-SysTick -> VAL = 0;//clears it
-SysTick -> CTRL = 0x00000007;//enables systick 48MHz no interrupts
-}
-void SysTick_Handler(void){
-    timeout = true;
+    SysTick -> CTRL = 0;//disable systick during setup
+    SysTick -> LOAD = 0x00FFFFFF;//max reload value
+    SysTick -> VAL = 0;//clears it
+    SysTick -> CTRL = 0x00000005;//enables systick 48MHz no interrupts
 }
 //delete later when interrupts work
 void delay_ms(int ms){//will roll over at 349ms//delay in milliseconds using systick
