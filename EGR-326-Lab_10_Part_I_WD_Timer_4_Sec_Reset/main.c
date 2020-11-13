@@ -1,7 +1,7 @@
 /***********************************************************************************************************
     Title:                EGR 326 Lab 09
     Filename:       main.c
-    Author(s):      Mathew J. Yerian-French
+    Author(s):      Mathew J. Yerian-French & Luke Metz
     Date:               11/06/2020
     Instructor:     Professor Brian Krug
     Description:   Lab 10 -  Speed sensing using Hall effect sensors and with the MSP43
@@ -35,6 +35,8 @@ Header files included:
 
 #define LEDPORT P2
 #define LEDPIN BIT2
+#define BUT P1
+#define S1 BIT1
 
 int count = 0, time = 0;
 bool timeout = false;
@@ -44,28 +46,19 @@ void Clock_Init48MHz(void);
 void SysTickInit(void);
 void delay_ms(int ms);//delay in milliseconds using systick
 void delay_us(int us);//delay in microeconds using systick
+void countW(void);
 
-void main(void){
-    WDT_A->CTL = WDT_A_CTL_PW          |
-                 WDT_A_CTL_SSEL__SMCLK |        // SMCLK as clock source
-                 WDT_A_CTL_TMSEL       |        // Interval timer mode
-                 WDT_A_CTL_CNTCL       |        // Clear WDT counter (initial value = 0)
-                 WDT_A_CTL_IS_4;                // Watchdog interval = 32K = 2^15 ticks
+int main(void)
+{
+    WDT_A->CTL = WDT_A_CTL_PW | WDT_A_CTL_HOLD;
 
-    char countS[2];
+        initMSP();
 
-    initMSP();
+          while(1){
+              countW();                     //count from 1 - 4 on LCD
+          }
+}
 
-        while(1){
-                    count++;
-                    itoa(count, countS);
-                    ST7735_DrawStringMod(STATUSX, STATUSY, countS, TXTCOLOR, BGCOLOR,  TXTSIZE);
-//                    if(count == 4)
-//                        count = 0;//resetWD
-                    time = 0;
-                    delay_ms(1000);
-                }
-    }
 
 void initMSP(void){
         LEDPORT->SEL0 &= ~(LEDPIN);                  //setting up LED
@@ -73,26 +66,40 @@ void initMSP(void){
         LEDPORT->DIR |= (LEDPIN);
         LEDPORT->OUT &= ~(LEDPIN); //turns ledsoff
 
+        BUT->SEL0 &=~ (S1);    //S1 as GPIO output
+        BUT->SEL1 &=~ (S1);
+        BUT->DIR &= ~(S1);    //s1 and s1 for interrupts
+        BUT->REN = (S1);
+        BUT->OUT = (S1);
+        BUT->IE = (S1);
+        BUT->IES = (S1);      //falling edge
+        BUT->IFG = 0x00;
+
         Clock_Init48MHz();
         SysTickInit();
 
+        ST7735_InitR(INITR_GREENTAB);
 //        Output_On();
 //        ST7735_SetRotation(0);
 //        ST7735_DrawBitmap(0, 160, gvlogo, 128, 160);
         LEDPORT->OUT |= (LEDPIN); //turns ledsoff
         delay_ms(500);
         LEDPORT->OUT &= ~(LEDPIN); //turns ledsoff
-        //delay_ms(2500);
-        ST7735_InitR(INITR_GREENTAB);
+//        delay_ms(2500);
         ST7735_FillScreen(BGCOLOR);
         ST7735_SetTextColor(TXTCOLOR);
         ST7735_DrawStringMod(STATUSX, STATUSY-(TXTSIZE*10), "Count", TXTCOLOR, BGCOLOR,  TXTSIZE);
-        NVIC->ISER[0] = 1 << ((WDT_A_IRQn) & 31);
-            __enable_irq();                             // Enable global interrupt
+
+        NVIC_EnableIRQ(PORT1_IRQn);
+        __enable_irq();
+
+        WDT_A->CTL = 0x5A00      // Watchdog Password
+             | 1<<5                   //Set to ACLK
+             | 0<<4                   //Set to Watchdog mode
+             | 1<<3                   // Clear Timer
+             | 4;
 }
-void WDT_A_IRQHandler(void){
-    timeout = true;
-}
+
 void Clock_Init48MHz(void){
     // Configure Flash wait-state to 1 for both banks 0 & 1
        FLCTL->BANK0_RDCTL = (FLCTL->BANK0_RDCTL & ~(FLCTL_BANK0_RDCTL_WAIT_MASK)) |
@@ -118,14 +125,21 @@ void Clock_Init48MHz(void){
 
       CS->CTL1 = CS->CTL1 |CS_CTL1_DIVS_2;    // change the SMCLK clock speed to 12 MHz.
 
+    CS->KEY = 0x0000695A;                            //password for CS registers
+    CS->CTL1 |= 0b00000010000000000000000000000000;   //dividing ACLCK by 4
+    CS->KEY = 0;
+
       CS->KEY = 0;                            // Lock CS module from unintended accesses
 }
 
 void SysTickInit(void){
-    SysTick -> CTRL = 0;//disable systick during setup
-    SysTick -> LOAD = 0x00FFFFFF;//max reload value
-    SysTick -> VAL = 0;//clears it
-    SysTick -> CTRL = 0x00000005;//enables systick 48MHz no interrupts
+SysTick -> CTRL = 0;//disable systick during setup
+SysTick -> LOAD = 0x00FFFFFF;//max reload value
+SysTick -> VAL = 0;//clears it
+SysTick -> CTRL = 0x00000005;//enables systick 48MHz no interrupts
+}
+void SysTick_Handler(void){
+    timeout = true;
 }
 //delete later when interrupts work
 void delay_ms(int ms){//will roll over at 349ms//delay in milliseconds using systick
@@ -145,4 +159,28 @@ else{
     SysTick->VAL = 0;
     while((SysTick->CTRL & BIT(16))==0);
 }
+}
+void PORT1_IRQHandler(void)
+{
+    if (BUT->IFG & S1)           //if S1 pressed set flag high
+    {
+        WDT_A->CTL = 0x5A00      // Watchdog Password
+        | 1<<5                   //Set to ACLK
+        | 0<<4                   //Set to Watchdog mode
+        | 1<<3                   // Clear Timer
+        | 4;
+    }//Set to 2^15 interval (1 second but 4 seconds with ACLCK divider)
+    BUT->IFG = 0x00;             //clear interrupt flags
+}
+
+void countW()
+{
+    int i, num=0;
+    char numS[10];
+    //for loop that prints 0-9 with 1 second interval in middle of screen
+    for(i=0; i<100; i++){
+        itoa(num+i, numS);
+        ST7735_DrawStringMod(STATUSX, STATUSY, numS, TXTCOLOR, BGCOLOR,  TXTSIZE);
+        delay_ms(1000);
+    }
 }
