@@ -40,7 +40,7 @@ void main(void)
 {
     WDT_A->CTL = WDT_A_CTL_PW | WDT_A_CTL_HOLD;     // stop watchdog timer
 
-    uint8_t i = 0, j;
+    uint8_t i = 0, j=0;
 
     BUTPORT->SEL0 &= ~(BUT1PIN | BUT2PIN); //setting up button as interrupt
     BUTPORT->SEL1 &= ~(BUT1PIN | BUT2PIN);
