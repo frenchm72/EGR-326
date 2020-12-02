@@ -4,8 +4,8 @@
     Author(s):      Mathew J. Yerian-French
     Date:               11/25/2020
     Instructor:     Professor Brian Krug
-    Description:   Final Project - Automotive Cluster
-    Note:               Hello
+    Description:  Final Project - Automotive Cluster
+    Note:
 ************************************************************************************************************
 WIRING FOR MSP432:
 Photo Diode :   3.3 - Diode - P5.5 - 10kohm - GND |
