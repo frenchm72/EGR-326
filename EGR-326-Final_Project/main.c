@@ -5,7 +5,7 @@
     Date:               11/25/2020
     Instructor:     Professor Brian Krug
     Description:   Final Project - Automotive Cluster
-    Note:
+    Note:               Hello
 ************************************************************************************************************
 WIRING FOR MSP432:
 Photo Diode :   3.3 - Diode - P5.5 - 10kohm - GND |
