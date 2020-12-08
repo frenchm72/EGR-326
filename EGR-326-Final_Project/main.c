@@ -22,6 +22,8 @@ Header files included:
 #include <rtc.h>
 #include <encoder.h>
 #include <ST7735.h>
+#include <wstep.h>
+#include <image.h>
 #include <projectmain.h> // main project header
 #include <string.h>
 #include <stdio.h>
@@ -31,40 +33,126 @@ Header files included:
 #include <stdint.h>
 /**********************************************************************************************************/
 #define EEADD (0x50 )
-bool BUT1 = false, BUT2 = false, SQWinterrupt = false, speedEX = false;
-bool CWcount = false, CCWcount = false , SWflag = false;
 
-void saveToEEPROM(int i);
-void readFromEEPROM(int i);
+bool BUT1 = false, BUT2 = false, SQWinterrupt = false, speedEX = false, tempEX = false;
+bool CWcount = false, CCWcount = false , SWflag = false;
+int EXTR, EXdata;
+
+
+float rise, fall, pulseWidthECHO;
+unsigned int RiseFlag = 0;
+bool count = false, print = false;
+uint16_t pulseWidth;
 
 void main(void)
 {
     WDT_A->CTL = WDT_A_CTL_PW | WDT_A_CTL_HOLD;     // stop watchdog timer
     initMSP();
 
+    float distIN = 0.0, distCM = 0.0;//global variables stepper and Sonar
+    float rpmP, SpeedP, oldSpeedP;
+    char num[10], dispDis[10];
+
+    //zero steppers
+    stateTempHeld = Step1;
+    stateSpeedHeld = Step1;
+    Sstep(MAXS, 1);
+    Tstep(MAXT, 1);
+    Tstep(MAXT, 0);
+    Tstep(MAXT, 1);
+    speedPos = 0.0;
+    tempPos = 0.0;
+
+    //goes after all init
+    setWDT();
+
    uint8_t i = 0, j=0;
 
+   ST7735_FillScreen(BGCOLOR);
 while(1){
+    setWDT();
     for(i = 0 ; i < 5 ; i++){
+        setWDT();
         while(1){
-            if(BUT1|speedEX){
+            setWDT();
+            delay_ms(173);//random delay for stepper
+            if(pulseWidth != 0){
+                rpmP = (((1000.0*1000.0*60.0)/(2.0*pulseWidth*250.0)));//calc rpm 250us by the number of counts
+                SpeedP = ((((rpmP*60.0)*0.5235)/5280.0)+SpeedP)/2;// calc speed
+                pulseWidth = 0;
+            }
+            else{
+                SpeedP = 0;
+                speedPos = 0;
+                if(speedPos > 0)
+                    speedPos = speedPos - 4;
+                else
+                    speedPos = 0;
+                Sstep(4, 1);
+            }
+            setWDT();
+           AbsSpeed = (3.4*SpeedP-38.0);//linear equation for the step this proved to be precise if the stepper is in the center
+           if(AbsSpeed > speedPos){
+               Sstep((AbsSpeed-speedPos), 0);
+               speedPos = AbsSpeed;
+           }
+           else if(AbsSpeed < speedPos){
+               Sstep((speedPos-AbsSpeed), 1);
+               speedPos = AbsSpeed;
+           }
+           if((SpeedP <= 9) && (oldSpeedP>= 10)){
+                   ST7735_FillRect(40, 60, 20*3,  20*3, BGCOLOR);
+                   oldSpeedP = SpeedP;
+           }
+           if((SpeedP <= 100) && (oldSpeedP >= 100)){
+                   ST7735_FillRect(40, 60, 20*3,  20*3, BGCOLOR);
+                   oldSpeedP = SpeedP;
+           }
+              itoa((SpeedP), num);//prints speed
+              ST7735_DrawStringMod(40, 40+20,  num, TXTCOLOR, BGCOLOR,  TXTSIZE+4);
+              oldSpeedP = SpeedP;
+
+                TRIGPORT->OUT &= ~(TRIGPIN);
+                delay_us(10);
+                TRIGPORT->OUT |= (TRIGPIN);
+                distCM = (pulseWidthECHO/3.0) / 58.0; //to find distance knowing speed of sound is 340m/s
+                distIN = (pulseWidthECHO/3.0) / 148.0;//find distance in inches
+                if(distCM <= 15.00)//turns LED on if close to object
+                    REDPORT->OUT &= ~(REDLED);
+                else
+                    REDPORT->OUT |= (REDLED);
+                strcpy(dispDis, "Distance: ");
+                itoa(distCM, num);
+                strcat(dispDis, num);
+                strcat(dispDis, " CM            ");
+                ST7735_DrawStringMod(STATUSX-2*(TXTSIZE*10), STATUSY+4*(TXTSIZE*10),dispDis , TXTCOLOR, BGCOLOR,  TXTSIZE);
+            if(readRTC.temp >= 25){
                 ReadRTC();
-                saveToEEPROM(i);
-                BUT1 = false;
+                saveToEEPROM(i, 0, readRTC.temp);
+                setWDT();
+                tempEX = false;
+                break;
+            }
+            if(SpeedP >= 75){
+                ReadRTC();
+                saveToEEPROM(i, 1, SpeedP);
+                setWDT();
                 speedEX = false;
                 break;
             }
-            if(BUT2){
+            if(BUT1){
                 j++;
                 if(j==5)
                     j = 0;
                 readFromEEPROM(j);
-                BUT2 = false;
+                updateEXT();
+                setWDT();
+                BUT1 = false;
             }
             if(SQWinterrupt){
                 ReadADC();
                 ReadRTC();
-                if((readRTC.hourT*10+readRTC.hourO) == 12)//makes sure no random letters are displayed
+                if(((readRTC.hourT*10+readRTC.hourO) == 12) && ((readRTC.minT*10+readRTC.minO) >= 0) && ((readRTC.minT*10+readRTC.minO) <= 5))//makes sure no random letters are displayed refreash every 122 hrs
                     ST7735_FillScreen(BGCOLOR);
                 updateTime();
                 SQWinterrupt = false;
@@ -73,7 +161,44 @@ while(1){
                 int value = readRTC.dayOfWeek, count = 0, pos = 0;
                 SWflag = false;
                 while(1){
+                    setWDT();
                     updateTime();
+                    if(pulseWidth != 0){
+                        rpmP = (((1000.0*1000.0*60.0)/(2.0*pulseWidth*250.0)));//calc rpm 250us by the number of counts
+                        SpeedP = ((((rpmP*60.0)*0.5235)/5280.0)+SpeedP)/2;// calc speed
+                        pulseWidth = 0;
+                    }
+                    else{
+                        SpeedP = 0;
+                        speedPos = 0;
+                        if(speedPos > 0)
+                            speedPos = speedPos - 4;
+                        else
+                            speedPos = 0;
+                        Sstep(4, 1);
+                    }
+                    setWDT();
+                   AbsSpeed = (3.4*SpeedP-38.0);//linear equation for the step this proved to be precise if the stepper is in the center
+                   if(AbsSpeed > speedPos){
+                       Sstep((AbsSpeed-speedPos), 0);
+                       speedPos = AbsSpeed;
+                   }
+                   else if(AbsSpeed < speedPos){
+                       Sstep((speedPos-AbsSpeed), 1);
+                       speedPos = AbsSpeed;
+                   }
+                   if((SpeedP <= 9) && (oldSpeedP>= 10)){
+                           ST7735_FillRect(40, 60, 20*3,  20*3, BGCOLOR);
+                           oldSpeedP = SpeedP;
+                   }
+                   if((SpeedP <= 100) && (oldSpeedP >= 100)){
+                           ST7735_FillRect(40, 60, 20*3,  20*3, BGCOLOR);
+                           oldSpeedP = SpeedP;
+                   }
+                      itoa((SpeedP), num);//prints speed
+                      ST7735_DrawStringMod(40, 40+20,  num, TXTCOLOR, BGCOLOR,  TXTSIZE+4);
+                      oldSpeedP = SpeedP;
+
                     if(CCWcount){//if user wants to decrease
                         count = 0;
                         __delay_cycles(48000*5);
@@ -256,7 +381,7 @@ while(1){
     }
 }
 }
-void saveToEEPROM(int i){
+void saveToEEPROM(int i, int SPEEDTEMP, int data){
     I2C1_byteWrite(EEADD, (( i << 4) & 0xFF) | (0x00 & 0xFF),  (readRTC.secO));
     __delay_cycles(DELAY);
     I2C1_byteWrite(EEADD, (( i << 4) & 0xFF) | (0x01 & 0xFF),  (readRTC.secT));
@@ -277,10 +402,18 @@ void saveToEEPROM(int i){
     __delay_cycles(DELAY);
     I2C1_byteWrite(EEADD, (( i << 4) & 0xFF) | (0x09 & 0xFF),  (readRTC.monthT));
     __delay_cycles(DELAY);
+    I2C1_byteWrite(EEADD, (( i << 4) & 0xFF) | (0x0A & 0xFF), SPEEDTEMP);
+    __delay_cycles(DELAY);
+    I2C1_byteWrite(EEADD, (( i << 4) & 0xFF) | (0x0B & 0xFF), data);
+    __delay_cycles(DELAY);
 }
 void readFromEEPROM(int i){
     unsigned char red;
-
+    I2C1_byteRead(EEADD, (( i << 4) & 0xFF) | (0x0B & 0xFF),  &red);
+    EXdata = red;
+    I2C1_byteRead(EEADD, (( i << 4) & 0xFF) | (0x0A & 0xFF),  &red);
+    EXTR = red;
+    __delay_cycles(DELAY);
     I2C1_byteRead(EEADD, (( i << 4) & 0xFF) | (0x09 & 0xFF),  &red);
     readEE.monthT = red;
     __delay_cycles(DELAY);
@@ -322,11 +455,11 @@ void ReadADC(void){
     ADC14 -> CTL0 |= ADC14_CTL0_SC; //starts conversion
              adc_input = ADC14->MEM[0];
              readVoltage = refV * ((adc_input + 0.5)/pow(2,14));
-             percentage =(1- ((readVoltage - minV)/(maxV - minV))) - 0.25 ;
+             percentage =(1- ((readVoltage - minV)/(maxV - minV))) - 0.05 ;
              if(percentage <= 0)
-                 TIMER_A2->CCR[1] = PERIOD*0;//a percentage of the max voltage seen
+                 TIMER_A1->CCR[1] = PERIOD*0;//a percentage of the max voltage seen
              else
-                 TIMER_A2->CCR[1] = PERIOD*percentage;//a percentage of the max voltage seen
+                 TIMER_A1->CCR[1] = PERIOD*percentage;//a percentage of the max voltage seen
 }
 
 void Clock_Init48MHz(void){
@@ -352,7 +485,7 @@ void Clock_Init48MHz(void){
                               CS_CTL1_SELM__HFXTCLK |
                               CS_CTL1_SELS__HFXTCLK;
 
-      CS->CTL1 = CS->CTL1 |CS_CTL1_DIVS_4;    // change the SMCLK clock speed to 12 MHz.
+      CS->CTL1 = CS->CTL1 |CS_CTL1_DIVS_4;    // change the SMCLK clock speed to 3MHz.
 
     CS->KEY = 0x0000695A;                            //password for CS registers
     CS->CTL1 |= 0b00000010000000000000000000000000;   //dividing ACLCK by 4
@@ -361,13 +494,14 @@ void Clock_Init48MHz(void){
       CS->KEY = 0;                            // Lock CS module from unintended accesses
 }
 void updateTime(void){
-    char date[100], num[10];
+ char date[100], num[10];
+    setWDT();
     strcpy(date, dayOfWeekDecode(readRTC.dayOfWeek) );
-    strcat(date, "   " );
+    strcat(date, "  " );
     itoa((readRTC.temp ), num);
     strcat(date, num);
     //strcat(date, 176);//°
-    strcat(date, " C" );
+    strcat(date, "C          " );
     ST7735_DrawStringMod(STATUSX-2*(TXTSIZE*10), STATUSY+5*(TXTSIZE*10),date , TXTCOLOR, BGCOLOR,  TXTSIZE);
     strcpy(date, monthDecode(readRTC.monthT *10 + readRTC.monthO) );
     strcat(date, " " );
@@ -384,6 +518,7 @@ void updateTime(void){
     strcat(date, num );
     itoa((readRTC.yearO), num);
     strcat(date, num );
+    strcat(date, "       " );
     ST7735_DrawStringMod(STATUSX-2*(TXTSIZE*10), STATUSY+6*(TXTSIZE*10),  date, TXTCOLOR, BGCOLOR,  TXTSIZE);
     itoa((readRTC.hourT), num);
     strcpy(date, num );
@@ -400,10 +535,43 @@ void updateTime(void){
     itoa((readRTC.secO), num);
     strcat(date, num );
     strcat(date, " " );
-    strcat(date, (readRTC.PMAM ? "PM" : "AM"));
+    strcat(date, (readRTC.PMAM ? "PM        " : "AM         "));
     ST7735_DrawStringMod(STATUSX+0.75*(TXTSIZE*10), STATUSY+7*(TXTSIZE*10),  date, TXTCOLOR, BGCOLOR,  TXTSIZE);
 }
-
+void updateEXT(void){
+    char date[100], num[10];
+    int placex=0;
+    ST7735_DrawStringMod(placex+3*(TXTSIZE*10), placex+0*(TXTSIZE*10),  "Extrusion:" , TXTCOLOR, BGCOLOR,  TXTSIZE);
+    if(EXTR)
+        strcpy(date, "Speed: ");
+    else
+        strcpy(date, "Temp: ");
+    itoa(EXdata, num);
+    strcat(date, num );
+    ST7735_DrawStringMod(placex+3*(TXTSIZE*10), placex+1*(TXTSIZE*10),  date, TXTCOLOR, BGCOLOR,  TXTSIZE);
+    strcpy(date, monthDecode(readEE.monthT *10 + readEE.monthO) );
+    strcat(date, " " );
+    itoa((readEE.dayT ), num);
+    strcat(date, num );
+    itoa((readEE.dayO ), num);
+    strcat(date, num );
+    ST7735_DrawStringMod(placex+3*(TXTSIZE*10), placex+2*(TXTSIZE*10),  date, TXTCOLOR, BGCOLOR,  TXTSIZE);
+    itoa((readEE.hourT), num);
+    strcpy(date, num );
+    itoa((readEE.hourO), num);
+    strcat(date, num );
+    strcat(date, ":" );
+    itoa((readEE.minT), num);
+    strcat(date, num );
+    itoa((readEE.minO), num);
+    strcat(date, num );
+    strcat(date, ":" );
+    itoa((readEE.secT), num);
+    strcat(date, num );
+    itoa((readEE.secO), num);
+    strcat(date, num );
+    ST7735_DrawStringMod(placex+3*(TXTSIZE*10), placex+3*(TXTSIZE*10),  date, TXTCOLOR, BGCOLOR,  TXTSIZE);
+}
 //must be in main due to structure
 void ReadRTC(void){
     unsigned char readBus;
@@ -456,13 +624,9 @@ void SetRTC(void){
 
 void PORT1_IRQHandler(void) // port 1 interrupt handler
 {
-    if(BUTPORT->IFG & BUT1PIN)
-        BUT1 = true;
-    if(BUTPORT->IFG & BUT2PIN)
-       BUT2 = true;
     if(SQWPORT->IFG & SQWPIN)
         SQWinterrupt = true;
-    BUTPORT->IFG &= ~(BUT1PIN | BUT2PIN|SQWPIN);
+    SQWPORT->IFG &= ~(SQWPIN);
 }
 
 void PORT6_IRQHandler(void) // port 5 interrupt handler this needs adjusted for the correct handler
@@ -489,4 +653,43 @@ void PORT6_IRQHandler(void) // port 5 interrupt handler this needs adjusted for 
         CLKPORT->IES ^= CLKPIN;//switching the edge to read (rise or fall)
     }
     P6->IFG &= ~(SWPIN|CLKPIN|DTPIN);//clears flag
+}
+
+void TA2_N_IRQHandler(void)
+{
+    if(TIMER_A2->CCTL[HALLINSTANCE] & (TIMER_A_CCTLN_CCIFG)){
+    if(count){
+        pulseWidth = TIMER_A2->CCR[HALLINSTANCE]; // Get current count
+        count = false;
+        print = true;
+    }
+    else{
+        TIMER_A2->CTL |= TIMER_A_CTL_CLR;
+        count = true;
+    }
+    }
+    TIMER_A2->CCTL[HALLINSTANCE] &= ~(TIMER_A_CCTLN_CCIFG);    // Clear the interrupt flag
+}
+
+void TA0_N_IRQHandler(void)
+{
+    rise = TIMER_A0->CCR[1]; // Get current count
+    if (ECHOPORT->IN&ECHOPIN)  //  record timer on a falling edge
+        TIMER_A0->CTL |=TIMER_A_CTL_CLR;    // start timer on a rising edge
+    else
+        pulseWidthECHO = rise; // record time on falling edge
+
+    TIMER_A0->CCTL[1] &= ~(TIMER_A_CCTLN_CCIFG);    // Clear the interrupt flag
+}
+
+
+void PORT3_IRQHandler(void) // port 1 interrupt handler
+{
+    if(WDBUTPORT->IFG & WDBUTPIN){
+        while(1);
+    }
+    if(BUTPORT->IFG & BUT1PIN){
+        BUT1 = true;
+    }
+    BUTPORT->IFG &= ~(BUT1PIN);
 }
