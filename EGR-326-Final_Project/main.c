@@ -38,6 +38,8 @@ bool BUT1 = false, BUT2 = false, SQWinterrupt = false, speedEX = false, tempEX =
 bool CWcount = false, CCWcount = false , SWflag = false;
 int EXTR, EXdata;
 
+uint16_t BGCOLOR;//black colors
+uint16_t TXTCOLOR; //white colors
 
 float rise, fall, pulseWidthECHO;
 unsigned int RiseFlag = 0;
@@ -48,6 +50,9 @@ void main(void)
 {
     WDT_A->CTL = WDT_A_CTL_PW | WDT_A_CTL_HOLD;     // stop watchdog timer
     initMSP();
+
+     BGCOLOR = ST7735_Color565(255, 255, 255);//black colors
+     TXTCOLOR = ST7735_Color565(0, 0, 0); //white colors
 
     float distIN = 0.0, distCM = 0.0;//global variables stepper and Sonar
     float rpmP, SpeedP, oldSpeedP;
@@ -66,14 +71,11 @@ void main(void)
     //goes after all init
     setWDT();
 
-   uint8_t i = 0, j=0;
-
+   int i, j;
+   i = 0;
+   j = 0;
    ST7735_FillScreen(BGCOLOR);
 while(1){
-    setWDT();
-    for(i = 0 ; i < 5 ; i++){
-        setWDT();
-        while(1){
             setWDT();
             delay_ms(173);//random delay for stepper
             if(pulseWidth != 0){
@@ -100,17 +102,9 @@ while(1){
                Sstep((speedPos-AbsSpeed), 1);
                speedPos = AbsSpeed;
            }
-           if((SpeedP <= 9) && (oldSpeedP>= 10)){
-                   ST7735_FillRect(40, 60, 20*3,  20*3, BGCOLOR);
-                   oldSpeedP = SpeedP;
-           }
-           if((SpeedP <= 100) && (oldSpeedP >= 100)){
-                   ST7735_FillRect(40, 60, 20*3,  20*3, BGCOLOR);
-                   oldSpeedP = SpeedP;
-           }
               itoa((SpeedP), num);//prints speed
+              strcat(num, "   ");
               ST7735_DrawStringMod(40, 40+20,  num, TXTCOLOR, BGCOLOR,  TXTSIZE+4);
-              oldSpeedP = SpeedP;
 
                 TRIGPORT->OUT &= ~(TRIGPIN);
                 delay_us(10);
@@ -126,28 +120,40 @@ while(1){
                 strcat(dispDis, num);
                 strcat(dispDis, " CM            ");
                 ST7735_DrawStringMod(STATUSX-2*(TXTSIZE*10), STATUSY+4*(TXTSIZE*10),dispDis , TXTCOLOR, BGCOLOR,  TXTSIZE);
-            if(readRTC.temp >= 25){
+
+            if((((readRTC.minT*10+readRTC.minO)/5)==0) && ((readRTC.secT*10+readRTC.secO)==0)){//allows program to fault every 5 min to prevent redundant excursion
+                speedEX = false;
+                tempEX = false;
+            }
+            if((readRTC.temp >= 25 ) && (tempEX == false)){//temp fault
+                delay_ms(5);
                 ReadRTC();
                 saveToEEPROM(i, 0, readRTC.temp);
                 setWDT();
-                tempEX = false;
-                break;
+                tempEX = true;
+                if(i>=5)
+                    i = 0;
+                i++;
             }
-            if(SpeedP >= 75){
+            if((SpeedP >= 60) && (speedEX == false)){//speed fault
+                delay_ms(5);
                 ReadRTC();
                 saveToEEPROM(i, 1, SpeedP);
                 setWDT();
-                speedEX = false;
-                break;
+                speedEX = true;
+                if(i>=5)
+                    i = 0;
+                i++;
             }
             if(BUT1){
-                j++;
-                if(j==5)
-                    j = 0;
+                delay_ms(5);
+                    BUT1 = false;
                 readFromEEPROM(j);
-                updateEXT();
+                updateEXT(j);
                 setWDT();
-                BUT1 = false;
+                if(j>=5)
+                    j = 0;
+                j++;
             }
             if(SQWinterrupt){
                 ReadADC();
@@ -187,21 +193,13 @@ while(1){
                        Sstep((speedPos-AbsSpeed), 1);
                        speedPos = AbsSpeed;
                    }
-                   if((SpeedP <= 9) && (oldSpeedP>= 10)){
-                           ST7735_FillRect(40, 60, 20*3,  20*3, BGCOLOR);
-                           oldSpeedP = SpeedP;
-                   }
-                   if((SpeedP <= 100) && (oldSpeedP >= 100)){
-                           ST7735_FillRect(40, 60, 20*3,  20*3, BGCOLOR);
-                           oldSpeedP = SpeedP;
-                   }
                       itoa((SpeedP), num);//prints speed
+                      strcat(num, "   ");
                       ST7735_DrawStringMod(40, 40+20,  num, TXTCOLOR, BGCOLOR,  TXTSIZE+4);
-                      oldSpeedP = SpeedP;
 
                     if(CCWcount){//if user wants to decrease
                         count = 0;
-                        __delay_cycles(48000*5);
+                        delay_ms(5);
                         if(pos == 0){//set day of week
                           if(value > 1)
                               value--;
@@ -252,7 +250,7 @@ while(1){
                     }
                     else if(CWcount){//if user wants to increase
                         count = 0;
-                        __delay_cycles(48000*5);
+                        delay_ms(5);
                         if(pos == 0){//set day of week
                            if(value < 7)
                                value++;
@@ -377,35 +375,33 @@ while(1){
                     }
                 }
             }
-        }
-    }
 }
 }
 void saveToEEPROM(int i, int SPEEDTEMP, int data){
     I2C1_byteWrite(EEADD, (( i << 4) & 0xFF) | (0x00 & 0xFF),  (readRTC.secO));
-    __delay_cycles(DELAY);
+    delay_ms(DELAY);
     I2C1_byteWrite(EEADD, (( i << 4) & 0xFF) | (0x01 & 0xFF),  (readRTC.secT));
-    __delay_cycles(DELAY);
+    delay_ms(DELAY);
     I2C1_byteWrite(EEADD, (( i << 4) & 0xFF) | (0x02 & 0xFF),  (readRTC.minO));
-    __delay_cycles(DELAY);
+    delay_ms(DELAY);
     I2C1_byteWrite(EEADD, (( i << 4) & 0xFF) | (0x03 & 0xFF),  (readRTC.minT));
-    __delay_cycles(DELAY);
+    delay_ms(DELAY);
     I2C1_byteWrite(EEADD, (( i << 4) & 0xFF) | (0x04 & 0xFF),  (readRTC.hourO));
-    __delay_cycles(DELAY);
+    delay_ms(DELAY);
     I2C1_byteWrite(EEADD, (( i << 4) & 0xFF) | (0x05 & 0xFF),  (readRTC.hourT));
-    __delay_cycles(DELAY);
+    delay_ms(DELAY);
     I2C1_byteWrite(EEADD, (( i << 4) & 0xFF) | (0x06 & 0xFF),  (readRTC.dayO));
-    __delay_cycles(DELAY);
+    delay_ms(DELAY);
     I2C1_byteWrite(EEADD, (( i << 4) & 0xFF) | (0x07 & 0xFF),  (readRTC.dayT));
-    __delay_cycles(DELAY);
+    delay_ms(DELAY);
     I2C1_byteWrite(EEADD, (( i << 4) & 0xFF) | (0x08 & 0xFF),  (readRTC.monthO));
-    __delay_cycles(DELAY);
+    delay_ms(DELAY);
     I2C1_byteWrite(EEADD, (( i << 4) & 0xFF) | (0x09 & 0xFF),  (readRTC.monthT));
-    __delay_cycles(DELAY);
+    delay_ms(DELAY);
     I2C1_byteWrite(EEADD, (( i << 4) & 0xFF) | (0x0A & 0xFF), SPEEDTEMP);
-    __delay_cycles(DELAY);
+    delay_ms(DELAY);
     I2C1_byteWrite(EEADD, (( i << 4) & 0xFF) | (0x0B & 0xFF), data);
-    __delay_cycles(DELAY);
+    delay_ms(DELAY);
 }
 void readFromEEPROM(int i){
     unsigned char red;
@@ -413,53 +409,64 @@ void readFromEEPROM(int i){
     EXdata = red;
     I2C1_byteRead(EEADD, (( i << 4) & 0xFF) | (0x0A & 0xFF),  &red);
     EXTR = red;
-    __delay_cycles(DELAY);
+    delay_ms(DELAY);
     I2C1_byteRead(EEADD, (( i << 4) & 0xFF) | (0x09 & 0xFF),  &red);
     readEE.monthT = red;
-    __delay_cycles(DELAY);
+    delay_ms(DELAY);
     I2C1_byteRead(EEADD, (( i << 4) & 0xFF) | (0x08 & 0xFF),  &red);
     readEE.monthO = red;
-    __delay_cycles(DELAY);
+    delay_ms(DELAY);
     I2C1_byteRead(EEADD, (( i << 4) & 0xFF) | (0x07 & 0xFF),  &red);
     readEE.dayT = red;
-    __delay_cycles(DELAY);
+    delay_ms(DELAY);
     I2C1_byteRead(EEADD, (( i << 4) & 0xFF) | (0x06 & 0xFF),  &red);
     readEE.dayO = red;
-    __delay_cycles(DELAY);
+    delay_ms(DELAY);
     I2C1_byteRead(EEADD, (( i << 4) & 0xFF) | (0x05 & 0xFF),  &red);
     readEE.hourT = red;
-    __delay_cycles(DELAY);
+    delay_ms(DELAY);
     I2C1_byteRead(EEADD, (( i << 4) & 0xFF) | (0x04 & 0xFF),  &red);
     readEE.hourO = red;
-    __delay_cycles(DELAY);
+    delay_ms(DELAY);
     I2C1_byteRead(EEADD, (( i << 4) & 0xFF) | (0x03 & 0xFF),  &red);
     readEE.minT = red;
-    __delay_cycles(DELAY);
+    delay_ms(DELAY);
     I2C1_byteRead(EEADD, (( i << 4) & 0xFF) | (0x02 & 0xFF),  &red);
     readEE.minO = red;
-    __delay_cycles(DELAY);
+    delay_ms(DELAY);
     I2C1_byteRead(EEADD, (( i << 4) & 0xFF) | (0x01 & 0xFF),  &red);
     readEE.secT = red;
-    __delay_cycles(DELAY);
+    delay_ms(DELAY);
     I2C1_byteRead(EEADD, (( i << 4) & 0xFF) | (0x00 & 0xFF),  &red);
     readEE.secO = red;
-    __delay_cycles(DELAY);
+    delay_ms(DELAY);
 }
 
 void ReadADC(void){
-       uint32_t adc_input;
-       float readVoltage, refV = 3.3;
-       float maxV = 3.3, minV = 0.5; //values from my room that will change automaticly with conditions found
+       float adc_input;
+       float refV = 3.3, readVoltage;
+       float maxV = 2.6, minV = 2.5; //values from my room that will change automaticly with conditions found
        float percentage;
-
+       float power = 16384.0;
     ADC14 -> CTL0 |= ADC14_CTL0_SC; //starts conversion
              adc_input = ADC14->MEM[0];
-             readVoltage = refV * ((adc_input + 0.5)/pow(2,14));
-             percentage =(1- ((readVoltage - minV)/(maxV - minV))) - 0.05 ;
+//             readVoltage = (refV * ((adc_input + 0.5)/power));
+             percentage =(1- (((refV * ((adc_input + 0.5)/power)) - minV)/(maxV - minV)));
              if(percentage <= 0)
                  TIMER_A1->CCR[1] = PERIOD*0;//a percentage of the max voltage seen
              else
                  TIMER_A1->CCR[1] = PERIOD*percentage;//a percentage of the max voltage seen
+
+             if(((percentage*100) <= 70) && (BGCOLOR != ST7735_Color565(255, 255, 255))){
+              BGCOLOR = ST7735_Color565(255, 255, 255);//black colors
+              TXTCOLOR = ST7735_Color565(0, 0, 0); //white colors
+              ST7735_FillScreen(BGCOLOR);
+             }
+             else if(((percentage*100) > 70) && (BGCOLOR != ST7735_Color565(0, 0, 0))){
+                 BGCOLOR = ST7735_Color565(0, 0, 0); //white colors
+                 TXTCOLOR = ST7735_Color565(255, 255, 255);//black colors
+                 ST7735_FillScreen(BGCOLOR);
+                }
 }
 
 void Clock_Init48MHz(void){
@@ -538,16 +545,20 @@ void updateTime(void){
     strcat(date, (readRTC.PMAM ? "PM        " : "AM         "));
     ST7735_DrawStringMod(STATUSX+0.75*(TXTSIZE*10), STATUSY+7*(TXTSIZE*10),  date, TXTCOLOR, BGCOLOR,  TXTSIZE);
 }
-void updateEXT(void){
+void updateEXT(int j){
     char date[100], num[10];
     int placex=0;
-    ST7735_DrawStringMod(placex+3*(TXTSIZE*10), placex+0*(TXTSIZE*10),  "Extrusion:" , TXTCOLOR, BGCOLOR,  TXTSIZE);
+    strcpy(date, "Extrusion #");
+    itoa(j, num);
+    strcat(date, num );
+    ST7735_DrawStringMod(placex+3*(TXTSIZE*10), placex+0*(TXTSIZE*10),  date , TXTCOLOR, BGCOLOR,  TXTSIZE);
     if(EXTR)
         strcpy(date, "Speed: ");
     else
         strcpy(date, "Temp: ");
     itoa(EXdata, num);
     strcat(date, num );
+    strcat(date, "             " );
     ST7735_DrawStringMod(placex+3*(TXTSIZE*10), placex+1*(TXTSIZE*10),  date, TXTCOLOR, BGCOLOR,  TXTSIZE);
     strcpy(date, monthDecode(readEE.monthT *10 + readEE.monthO) );
     strcat(date, " " );
@@ -555,6 +566,7 @@ void updateEXT(void){
     strcat(date, num );
     itoa((readEE.dayO ), num);
     strcat(date, num );
+    strcat(date, " " );
     ST7735_DrawStringMod(placex+3*(TXTSIZE*10), placex+2*(TXTSIZE*10),  date, TXTCOLOR, BGCOLOR,  TXTSIZE);
     itoa((readEE.hourT), num);
     strcpy(date, num );
@@ -570,6 +582,7 @@ void updateEXT(void){
     strcat(date, num );
     itoa((readEE.secO), num);
     strcat(date, num );
+    strcat(date, "              " );
     ST7735_DrawStringMod(placex+3*(TXTSIZE*10), placex+3*(TXTSIZE*10),  date, TXTCOLOR, BGCOLOR,  TXTSIZE);
 }
 //must be in main due to structure
@@ -666,6 +679,9 @@ void TA2_N_IRQHandler(void)
     else{
         TIMER_A2->CTL |= TIMER_A_CTL_CLR;
         count = true;
+    }
+    if(TIMER_A2->IV == 0x0E) {              //Overflow
+            TIMER_A2->CTL |= TIMER_A_CTL_CLR;
     }
     }
     TIMER_A2->CCTL[HALLINSTANCE] &= ~(TIMER_A_CCTLN_CCIFG);    // Clear the interrupt flag

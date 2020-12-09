@@ -18,7 +18,7 @@
 #define SQWPORT P1
 #define SQWPIN BIT6
 
-#define DELAY 48000
+#define DELAY 1
 #define CLEARX 100
 #define CLEARY 25
 #define STATUSX 30
@@ -36,7 +36,7 @@
 #define REDPORT P3//break led
 #define REDLED BIT5
 
-void updateEXT(void);
+void updateEXT(int j);
 void updateTime(void);
 void Clock_Init48MHz(void);
 void ADC14init(void);

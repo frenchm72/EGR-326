@@ -93,8 +93,7 @@
 /*****************************************************************
  * personal edits for macros
 *****************************************************************/
-#define BGCOLOR ST7735_Color565(255, 255, 255)//black colors
-#define TXTCOLOR ST7735_Color565(0, 0, 0) //white colors
+
 #define TXTSIZE 1
 
 #define rightwall 106
