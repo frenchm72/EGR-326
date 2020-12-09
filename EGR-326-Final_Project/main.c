@@ -125,15 +125,19 @@ while(1){
                 speedEX = false;
                 tempEX = false;
             }
+            if(SpeedP < 60)
+                speedEX = false;
+            if((readRTC.temp < 25 ))
+                tempEX = false;
             if((readRTC.temp >= 25 ) && (tempEX == false)){//temp fault
                 delay_ms(5);
                 ReadRTC();
                 saveToEEPROM(i, 0, readRTC.temp);
                 setWDT();
                 tempEX = true;
+                i++;
                 if(i>=5)
                     i = 0;
-                i++;
             }
             if((SpeedP >= 60) && (speedEX == false)){//speed fault
                 delay_ms(5);
@@ -141,9 +145,9 @@ while(1){
                 saveToEEPROM(i, 1, SpeedP);
                 setWDT();
                 speedEX = true;
+                i++;
                 if(i>=5)
                     i = 0;
-                i++;
             }
             if(BUT1){
                 delay_ms(5);
@@ -151,9 +155,9 @@ while(1){
                 readFromEEPROM(j);
                 updateEXT(j);
                 setWDT();
+                j++;
                 if(j>=5)
                     j = 0;
-                j++;
             }
             if(SQWinterrupt){
                 ReadADC();
@@ -398,16 +402,18 @@ void saveToEEPROM(int i, int SPEEDTEMP, int data){
     delay_ms(DELAY);
     I2C1_byteWrite(EEADD, (( i << 4) & 0xFF) | (0x09 & 0xFF),  (readRTC.monthT));
     delay_ms(DELAY);
-    I2C1_byteWrite(EEADD, (( i << 4) & 0xFF) | (0x0A & 0xFF), SPEEDTEMP);
+    I2C1_byteWrite(EEADD, (( i << 4) & 0xFF) | (0x0A & 0xFF),  (readRTC.PMAM));
     delay_ms(DELAY);
-    I2C1_byteWrite(EEADD, (( i << 4) & 0xFF) | (0x0B & 0xFF), data);
+    I2C1_byteWrite(EEADD, (( i << 4) & 0xFF) | (0x0B & 0xFF), SPEEDTEMP);
+    delay_ms(DELAY);
+    I2C1_byteWrite(EEADD, (( i << 4) & 0xFF) | (0x0C & 0xFF), data);
     delay_ms(DELAY);
 }
 void readFromEEPROM(int i){
     unsigned char red;
-    I2C1_byteRead(EEADD, (( i << 4) & 0xFF) | (0x0B & 0xFF),  &red);
+    I2C1_byteRead(EEADD, (( i << 4) & 0xFF) | (0x0C & 0xFF),  &red);
     EXdata = red;
-    I2C1_byteRead(EEADD, (( i << 4) & 0xFF) | (0x0A & 0xFF),  &red);
+    I2C1_byteRead(EEADD, (( i << 4) & 0xFF) | (0x0B & 0xFF),  &red);
     EXTR = red;
     delay_ms(DELAY);
     I2C1_byteRead(EEADD, (( i << 4) & 0xFF) | (0x09 & 0xFF),  &red);
@@ -439,6 +445,9 @@ void readFromEEPROM(int i){
     delay_ms(DELAY);
     I2C1_byteRead(EEADD, (( i << 4) & 0xFF) | (0x00 & 0xFF),  &red);
     readEE.secO = red;
+    delay_ms(DELAY);
+    I2C1_byteRead(EEADD, (( i << 4) & 0xFF) | (0x0A & 0xFF),  &red);
+    readEE.PMAM = red;
     delay_ms(DELAY);
 }
 
@@ -542,7 +551,7 @@ void updateTime(void){
     itoa((readRTC.secO), num);
     strcat(date, num );
     strcat(date, " " );
-    strcat(date, (readRTC.PMAM ? "PM        " : "AM         "));
+    strcat(date, (readRTC.PMAM ? " PM        " : " AM         "));
     ST7735_DrawStringMod(STATUSX+0.75*(TXTSIZE*10), STATUSY+7*(TXTSIZE*10),  date, TXTCOLOR, BGCOLOR,  TXTSIZE);
 }
 void updateEXT(int j){
@@ -582,7 +591,7 @@ void updateEXT(int j){
     strcat(date, num );
     itoa((readEE.secO), num);
     strcat(date, num );
-    strcat(date, "              " );
+    strcat(date, (readRTC.PMAM ? "PM        " : "AM         "));
     ST7735_DrawStringMod(placex+3*(TXTSIZE*10), placex+3*(TXTSIZE*10),  date, TXTCOLOR, BGCOLOR,  TXTSIZE);
 }
 //must be in main due to structure
